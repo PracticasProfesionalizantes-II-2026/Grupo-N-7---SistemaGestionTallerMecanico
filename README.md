@@ -19,4 +19,4 @@ Mina Facundo, Schopp Yamil
 
 [documentacion del proyecto v2](https://docs.google.com/document/d/1FJnO2W32KSkT_hStfJJaQrvqy8hHoveu/edit?usp=sharing&ouid=104000815300877297413&rtpof=true&sd=true)
 
-
+[documentacion API](https://docs.google.com/document/d/1KyeZ8kFX5suhWHsNQBzPMJdI_WMm_oADmYiPEULkgZU/edit?usp=sharing)
