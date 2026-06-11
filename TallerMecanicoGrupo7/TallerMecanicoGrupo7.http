@@ -1,0 +1,6 @@
+@TallerMecanicoGrupo7_HostAddress = http://localhost:5237
+
+GET {{TallerMecanicoGrupo7_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

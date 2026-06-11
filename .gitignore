@@ -1,0 +1,17 @@
+# Ignorar la carpeta de metadatos de Visual Studio
+.vs/
+
+# Ignorar carpetas de compilación
+[Dd]ebug/
+[Rr]elease/
+
+# Ignorar archivos de paquetes
+*.nupkg
+
+# Ignorar carpetas de output de compilación
+bin/
+obj/
+
+# Ignorar archivos temporales
+*.user
+*.suo
