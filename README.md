@@ -1,5 +1,7 @@
 # Grupo-N-7----Sistema Taller mecanico.
-Mina Facundo, Schopp Yamil, Spengler Josefina.
+Mina Facundo, Schopp Yamil
+
+2025
 
 [documentacion del proyecto](https://docs.google.com/document/d/1FJnO2W32KSkT_hStfJJaQrvqy8hHoveu/edit?usp=sharing&ouid=104000815300877297413&rtpof=true&sd=true)
 
@@ -11,3 +13,10 @@ Mina Facundo, Schopp Yamil, Spengler Josefina.
 
 [Diagrama Casos de uso](https://docs.google.com/document/d/1qq6iwsXYX075ALMOYkurSFfvd_pjU8PgZ_S0Ka53wmI/edit?usp=sharing)
 
+
+
+2026
+
+[documentacion del proyecto v2](https://docs.google.com/document/d/1FJnO2W32KSkT_hStfJJaQrvqy8hHoveu/edit?usp=sharing&ouid=104000815300877297413&rtpof=true&sd=true)
+
+[documentacion API](https://docs.google.com/document/d/1KyeZ8kFX5suhWHsNQBzPMJdI_WMm_oADmYiPEULkgZU/edit?usp=sharing)
