@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace ClasesTallerMecanico.Models
 {
@@ -27,10 +28,12 @@ namespace ClasesTallerMecanico.Models
         [Required]
         [ForeignKey("Cliente")]
         public int IdCliente { get; set; }
+        [JsonIgnore]
         public Cliente Cliente { get; set; } // Relación 1 a 1 con Cliente
 
         public bool Activo { get; set; } = true;
 
+        [JsonIgnore]
         public ICollection<Turno> Turnos { get; set; } // Relación 1 a muchos con Turno
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace ClasesTallerMecanico.Models
 {
@@ -11,11 +12,13 @@ namespace ClasesTallerMecanico.Models
         [Required]
         [ForeignKey("FacturaCompra")]
         public int IdFacturaCompra { get; set; }
+        [JsonIgnore]
         public FacturaCompra FacturaCompra { get; set; }
 
         [Required]
         [ForeignKey("Insumo")]
         public int IdInsumo { get; set; }
+        [JsonIgnore]
         public Insumo Insumo { get; set; } //relacion  1 a 1 con insumo
 
         [Required(ErrorMessage = "La fecha de compra es requerida.")]

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace ClasesTallerMecanico.Models
 {
@@ -22,6 +23,7 @@ namespace ClasesTallerMecanico.Models
         [Required]
         [ForeignKey("Proveedor")]
         public int IdProveedor { get; set; }
+        [JsonIgnore]
         public Proveedor Proveedor { get; set; } // Relacion 1 a 1 con Proveedor
 
         [Required(ErrorMessage = "El stock es requerido")]
@@ -40,7 +42,9 @@ namespace ClasesTallerMecanico.Models
 
         public bool Activo { get; set; } = true;
 
+        [JsonIgnore]
         public ICollection<InsumoPorTrabajo> InsumosPorTrabajo { get; set; } // Relacion muchos a muchos con InsumoPorTrabajo
+        [JsonIgnore]
         public ICollection<DetalleFacturaCompra> DetallesCompra { get; set; } // Relacion muchos a muchos con DetalleFacturaCompra
     }
 
