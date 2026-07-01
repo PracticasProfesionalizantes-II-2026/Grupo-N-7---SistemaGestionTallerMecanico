@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace ClasesTallerMecanico.Models
 {
@@ -14,6 +15,7 @@ namespace ClasesTallerMecanico.Models
         public bool Activo { get; set; } = true;
 
         //relacion con trabajo, una categoria puede tener muchos trabajos
+        [JsonIgnore]
         public ICollection<Trabajo> Trabajos { get; set; }
     }
 }

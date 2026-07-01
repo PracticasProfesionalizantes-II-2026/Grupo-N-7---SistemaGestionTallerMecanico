@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace ClasesTallerMecanico.Models
 {
@@ -11,16 +12,19 @@ namespace ClasesTallerMecanico.Models
         [Required]
         [ForeignKey("Turno")]
         public int IdTurno { get; set; }
+        [JsonIgnore]
         public Turno Turno { get; set; } // Relacion 1 a 1 con Turno
 
         [Required]
         [ForeignKey("Trabajo")]
         public int IdTrabajo { get; set; }
+        [JsonIgnore]
         public Trabajo Trabajo { get; set; } // Relacion 1 a 1 con Trabajo
 
         [Required]
         [ForeignKey("Usuario")]
         public int IdUsuario { get; set; }
+        [JsonIgnore]
         public Usuario Usuario { get; set; } // Relacion 1 a 1 con Usuario (Mecánico)
 
         [Required(ErrorMessage = "Las horas son requeridas.")]
@@ -36,7 +40,9 @@ namespace ClasesTallerMecanico.Models
         [MaxLength(500)]
         public string? Descripcion { get; set; }
 
+        [JsonIgnore]
         public ICollection<InsumoPorTrabajo> InsumosConsumidos { get; set; } // Relacion 1 a muchos con InsumoPorTrabajo
+        [JsonIgnore]
         public ICollection<DetalleFacturaVenta> DetallesVenta { get; set; } // Relacion 1 a muchos con DetalleFacturaVenta
     }
 

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace ClasesTallerMecanico.Models
 {
@@ -11,11 +12,13 @@ namespace ClasesTallerMecanico.Models
         [Required]
         [ForeignKey("Proveedor")]
         public int IdProveedor { get; set; }
+        [JsonIgnore]
         public Proveedor Proveedor { get; set; } //relacion  1 a 1 con proveedor
 
         [Required]
         [ForeignKey("SesionCaja")]
         public int IdSesionCaja { get; set; }
+        [JsonIgnore]
         public SesionCaja SesionCaja { get; set; } //relacion  1 a 1 con sesion caja
 
         [Required(ErrorMessage = "La fecha de factura es requerida.")]
@@ -32,8 +35,10 @@ namespace ClasesTallerMecanico.Models
 
         [ForeignKey("FormaPago")]
         public int IdFormaPago { get; set; }
+        [JsonIgnore]
         public FormaPago? FormaPago { get; set; } //relacion  1 a 1 con forma de pago
 
+        [JsonIgnore]
         public ICollection<DetalleFacturaCompra> Detalles { get; set; } //relacion 1 a muchos con detalle factura compra
     }
 }
