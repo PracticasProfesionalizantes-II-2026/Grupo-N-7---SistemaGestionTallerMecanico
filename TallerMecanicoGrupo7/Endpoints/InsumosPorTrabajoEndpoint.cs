@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class InsumosPorTrabajoEndpoint
 {
@@ -9,22 +9,23 @@ public static class InsumosPorTrabajoEndpoint
         app.MapGet("/api/insumos-por-trabajo", async (IInsumosPorTrabajoLogica logica) =>
         {
             var insumosPorTrabajo = await logica.GetInsumosPorTrabajoAsync();
-            return Results.Ok(insumosPorTrabajo);
+            return Results.Ok(insumosPorTrabajo.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/insumos-por-trabajo/{id}", async (int id, IInsumosPorTrabajoLogica logica) =>
         {
             var insumoPorTrabajo = await logica.GetInsumoPorTrabajoByIdAsync(id);
-            return insumoPorTrabajo is not null ? Results.Ok(insumoPorTrabajo) : Results.NotFound();
+            return insumoPorTrabajo is not null ? Results.Ok(insumoPorTrabajo.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/insumos-por-trabajo", async (InsumoPorTrabajo insumoPorTrabajo, IInsumosPorTrabajoLogica logica) =>
+        app.MapPost("/api/insumos-por-trabajo", async (InsumoPorTrabajoWriteDto insumoPorTrabajo, IInsumosPorTrabajoLogica logica) =>
         {
-            await logica.AddInsumoPorTrabajoAsync(insumoPorTrabajo);
-            return Results.Created($"/api/insumos-por-trabajo/{insumoPorTrabajo.Id}", insumoPorTrabajo);
+            var entity = insumoPorTrabajo.ToEntity();
+            await logica.AddInsumoPorTrabajoAsync(entity);
+            return Results.Created($"/api/insumos-por-trabajo/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/insumos-por-trabajo/{id}", async (int id, InsumoPorTrabajo insumoPorTrabajo, IInsumosPorTrabajoLogica logica) =>
+        app.MapPut("/api/insumos-por-trabajo/{id}", async (int id, InsumoPorTrabajoWriteDto insumoPorTrabajo, IInsumosPorTrabajoLogica logica) =>
         {
             if (id != insumoPorTrabajo.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class InsumosPorTrabajoEndpoint
             if (existingInsumoPorTrabajo is null)
                 return Results.NotFound();
 
-            await logica.UpdateInsumoPorTrabajoAsync(insumoPorTrabajo);
+            await logica.UpdateInsumoPorTrabajoAsync(insumoPorTrabajo.ToEntity());
             return Results.NoContent();
         });
 

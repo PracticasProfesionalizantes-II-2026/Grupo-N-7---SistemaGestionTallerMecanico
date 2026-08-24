@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class DetallesFacturasComprasEndpoint
 {
@@ -9,22 +9,23 @@ public static class DetallesFacturasComprasEndpoint
         app.MapGet("/api/detalles-facturas-compras", async (IDetallesFacturasComprasLogica logica) =>
         {
             var detalles = await logica.GetDetallesAsync();
-            return Results.Ok(detalles);
+            return Results.Ok(detalles.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/detalles-facturas-compras/{id}", async (int id, IDetallesFacturasComprasLogica logica) =>
         {
             var detalle = await logica.GetDetalleByIdAsync(id);
-            return detalle is not null ? Results.Ok(detalle) : Results.NotFound();
+            return detalle is not null ? Results.Ok(detalle.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/detalles-facturas-compras", async (DetalleFacturaCompra detalle, IDetallesFacturasComprasLogica logica) =>
+        app.MapPost("/api/detalles-facturas-compras", async (DetalleFacturaCompraWriteDto detalle, IDetallesFacturasComprasLogica logica) =>
         {
-            await logica.AddDetalleAsync(detalle);
-            return Results.Created($"/api/detalles-facturas-compras/{detalle.Id}", detalle);
+            var entity = detalle.ToEntity();
+            await logica.AddDetalleAsync(entity);
+            return Results.Created($"/api/detalles-facturas-compras/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/detalles-facturas-compras/{id}", async (int id, DetalleFacturaCompra detalle, IDetallesFacturasComprasLogica logica) =>
+        app.MapPut("/api/detalles-facturas-compras/{id}", async (int id, DetalleFacturaCompraWriteDto detalle, IDetallesFacturasComprasLogica logica) =>
         {
             if (id != detalle.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class DetallesFacturasComprasEndpoint
             if (existingDetalle is null)
                 return Results.NotFound();
 
-            await logica.UpdateDetalleAsync(detalle);
+            await logica.UpdateDetalleAsync(detalle.ToEntity());
             return Results.NoContent();
         });
 

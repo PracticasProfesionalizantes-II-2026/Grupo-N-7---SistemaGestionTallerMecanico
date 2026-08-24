@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class LocalidadesEndpoint
 {
@@ -9,22 +9,23 @@ public static class LocalidadesEndpoint
         app.MapGet("/api/localidades", async (ILocalidadesLogica logica) =>
         {
             var localidades = await logica.GetLocalidadesAsync();
-            return Results.Ok(localidades);
+            return Results.Ok(localidades.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/localidades/{id}", async (int id, ILocalidadesLogica logica) =>
         {
             var localidad = await logica.GetLocalidadByIdAsync(id);
-            return localidad is not null ? Results.Ok(localidad) : Results.NotFound();
+            return localidad is not null ? Results.Ok(localidad.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/localidades", async (Localidad localidad, ILocalidadesLogica logica) =>
+        app.MapPost("/api/localidades", async (LocalidadWriteDto localidad, ILocalidadesLogica logica) =>
         {
-            await logica.AddLocalidadAsync(localidad);
-            return Results.Created($"/api/localidades/{localidad.Id}", localidad);
+            var entity = localidad.ToEntity();
+            await logica.AddLocalidadAsync(entity);
+            return Results.Created($"/api/localidades/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/localidades/{id}", async (int id, Localidad localidad, ILocalidadesLogica logica) =>
+        app.MapPut("/api/localidades/{id}", async (int id, LocalidadWriteDto localidad, ILocalidadesLogica logica) =>
         {
             if (id != localidad.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class LocalidadesEndpoint
             if (existingLocalidad is null)
                 return Results.NotFound();
 
-            await logica.UpdateLocalidadAsync(localidad);
+            await logica.UpdateLocalidadAsync(localidad.ToEntity());
             return Results.NoContent();
         });
 

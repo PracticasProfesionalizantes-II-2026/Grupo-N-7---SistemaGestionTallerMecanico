@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 
 namespace ClasesTallerMecanico.Models
 {
@@ -25,7 +24,6 @@ namespace ClasesTallerMecanico.Models
         [Required(ErrorMessage = "La localidad es requerida.")]
         [ForeignKey("Localidad")]
         public int IdLocalidad { get; set; }
-        [JsonIgnore]
         public Localidad Localidad { get; set; }
 
         [MaxLength(20)]

@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class TiposTurnoEndpoint
 {
@@ -9,22 +9,23 @@ public static class TiposTurnoEndpoint
         app.MapGet("/api/tipos-turno", async (ITiposTurnoLogica logica) =>
         {
             var tiposTurno = await logica.GetTiposTurnoAsync();
-            return Results.Ok(tiposTurno);
+            return Results.Ok(tiposTurno.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/tipos-turno/{id}", async (int id, ITiposTurnoLogica logica) =>
         {
             var tipoTurno = await logica.GetTipoTurnoByIdAsync(id);
-            return tipoTurno is not null ? Results.Ok(tipoTurno) : Results.NotFound();
+            return tipoTurno is not null ? Results.Ok(tipoTurno.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/tipos-turno", async (TipoTurno tipoTurno, ITiposTurnoLogica logica) =>
+        app.MapPost("/api/tipos-turno", async (TipoTurnoWriteDto tipoTurno, ITiposTurnoLogica logica) =>
         {
-            await logica.AddTipoTurnoAsync(tipoTurno);
-            return Results.Created($"/api/tipos-turno/{tipoTurno.Id}", tipoTurno);
+            var entity = tipoTurno.ToEntity();
+            await logica.AddTipoTurnoAsync(entity);
+            return Results.Created($"/api/tipos-turno/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/tipos-turno/{id}", async (int id, TipoTurno tipoTurno, ITiposTurnoLogica logica) =>
+        app.MapPut("/api/tipos-turno/{id}", async (int id, TipoTurnoWriteDto tipoTurno, ITiposTurnoLogica logica) =>
         {
             if (id != tipoTurno.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class TiposTurnoEndpoint
             if (existingTipoTurno is null)
                 return Results.NotFound();
 
-            await logica.UpdateTipoTurnoAsync(tipoTurno);
+            await logica.UpdateTipoTurnoAsync(tipoTurno.ToEntity());
             return Results.NoContent();
         });
 

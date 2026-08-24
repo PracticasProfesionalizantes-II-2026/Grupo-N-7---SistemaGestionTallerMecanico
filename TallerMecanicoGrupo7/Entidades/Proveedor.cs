@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 
 namespace ClasesTallerMecanico.Models
 {
@@ -15,9 +14,7 @@ namespace ClasesTallerMecanico.Models
         [MaxLength(50)]
         public string CondFiscal { get; set; }
 
-        [JsonIgnore]
         public ICollection<Insumo> Insumos { get; set; } // Relación uno a muchos con Insumo
-        [JsonIgnore]
         public ICollection<FacturaCompra> FacturasCompra { get; set; } // Relación uno a muchos con FacturaCompra
     }
 }

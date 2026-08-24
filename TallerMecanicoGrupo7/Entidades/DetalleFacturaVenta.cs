@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 
 namespace ClasesTallerMecanico.Models
 {
@@ -12,17 +11,14 @@ namespace ClasesTallerMecanico.Models
         [Required]
         [ForeignKey("FacturaVenta")]
         public int IdFactura { get; set; }
-        [JsonIgnore]
         public FacturaVenta FacturaVenta { get; set; } //relacion  1 a 1 con factura venta
 
         [ForeignKey("TrabajoPorTurno")]
         public int? IdTrabajoPorTurno { get; set; }
-        [JsonIgnore]
         public TrabajoPorTurno? TrabajoPorTurno { get; set; } //relacion  1 a 1 con trabajo por turno
 
         [ForeignKey("InsumoPorTrabajo")]
         public int? IdInsumoPorTrabajo { get; set; }
-        [JsonIgnore]
         public InsumoPorTrabajo? InsumoPorTrabajo { get; set; } //relacion  1 a 1 con insumo por trabajo
 
         [Required(ErrorMessage = "La descripcion del item es requerida.")]

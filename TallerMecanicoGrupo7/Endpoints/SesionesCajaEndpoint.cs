@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class SesionesCajaEndpoint
 {
@@ -9,22 +9,23 @@ public static class SesionesCajaEndpoint
         app.MapGet("/api/sesiones-caja", async (ISesionesCajaLogica logica) =>
         {
             var sesionesCaja = await logica.GetSesionesCajaAsync();
-            return Results.Ok(sesionesCaja);
+            return Results.Ok(sesionesCaja.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/sesiones-caja/{id}", async (int id, ISesionesCajaLogica logica) =>
         {
             var sesionCaja = await logica.GetSesionCajaByIdAsync(id);
-            return sesionCaja is not null ? Results.Ok(sesionCaja) : Results.NotFound();
+            return sesionCaja is not null ? Results.Ok(sesionCaja.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/sesiones-caja", async (SesionCaja sesionCaja, ISesionesCajaLogica logica) =>
+        app.MapPost("/api/sesiones-caja", async (SesionCajaWriteDto sesionCaja, ISesionesCajaLogica logica) =>
         {
-            await logica.AddSesionCajaAsync(sesionCaja);
-            return Results.Created($"/api/sesiones-caja/{sesionCaja.Id}", sesionCaja);
+            var entity = sesionCaja.ToEntity();
+            await logica.AddSesionCajaAsync(entity);
+            return Results.Created($"/api/sesiones-caja/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/sesiones-caja/{id}", async (int id, SesionCaja sesionCaja, ISesionesCajaLogica logica) =>
+        app.MapPut("/api/sesiones-caja/{id}", async (int id, SesionCajaWriteDto sesionCaja, ISesionesCajaLogica logica) =>
         {
             if (id != sesionCaja.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class SesionesCajaEndpoint
             if (existingSesionCaja is null)
                 return Results.NotFound();
 
-            await logica.UpdateSesionCajaAsync(sesionCaja);
+            await logica.UpdateSesionCajaAsync(sesionCaja.ToEntity());
             return Results.NoContent();
         });
 
