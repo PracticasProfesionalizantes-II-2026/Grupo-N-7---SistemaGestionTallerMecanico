@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class InsumosEndpoint
 {
@@ -9,22 +9,23 @@ public static class InsumosEndpoint
         app.MapGet("/api/insumos", async (IInsumosLogica logica) =>
         {
             var insumos = await logica.GetInsumosAsync();
-            return Results.Ok(insumos);
+            return Results.Ok(insumos.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/insumos/{id}", async (int id, IInsumosLogica logica) =>
         {
             var insumo = await logica.GetInsumoByIdAsync(id);
-            return insumo is not null ? Results.Ok(insumo) : Results.NotFound();
+            return insumo is not null ? Results.Ok(insumo.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/insumos", async (Insumo insumo, IInsumosLogica logica) =>
+        app.MapPost("/api/insumos", async (InsumoWriteDto insumo, IInsumosLogica logica) =>
         {
-            await logica.AddInsumoAsync(insumo);
-            return Results.Created($"/api/insumos/{insumo.Id}", insumo);
+            var entity = insumo.ToEntity();
+            await logica.AddInsumoAsync(entity);
+            return Results.Created($"/api/insumos/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/insumos/{id}", async (int id, Insumo insumo, IInsumosLogica logica) =>
+        app.MapPut("/api/insumos/{id}", async (int id, InsumoWriteDto insumo, IInsumosLogica logica) =>
         {
             if (id != insumo.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class InsumosEndpoint
             if (existingInsumo is null)
                 return Results.NotFound();
 
-            await logica.UpdateInsumoAsync(insumo);
+            await logica.UpdateInsumoAsync(insumo.ToEntity());
             return Results.NoContent();
         });
 

@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class UsuariosEndpoint
 {
@@ -9,22 +9,23 @@ public static class UsuariosEndpoint
         app.MapGet("/api/usuarios", async (IUsuariosLogica logica) =>
         {
             var usuarios = await logica.GetUsuariosAsync();
-            return Results.Ok(usuarios);
+            return Results.Ok(usuarios.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/usuarios/{id}", async (int id, IUsuariosLogica logica) =>
         {
             var usuario = await logica.GetUsuarioByIdAsync(id);
-            return usuario is not null ? Results.Ok(usuario) : Results.NotFound();
+            return usuario is not null ? Results.Ok(usuario.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/usuarios", async (Usuario usuario, IUsuariosLogica logica) =>
+        app.MapPost("/api/usuarios", async (UsuarioWriteDto usuario, IUsuariosLogica logica) =>
         {
-            await logica.AddUsuarioAsync(usuario);
-            return Results.Created($"/api/usuarios/{usuario.Id}", usuario);
+            var entity = usuario.ToEntity();
+            await logica.AddUsuarioAsync(entity);
+            return Results.Created($"/api/usuarios/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/usuarios/{id}", async (int id, Usuario usuario, IUsuariosLogica logica) =>
+        app.MapPut("/api/usuarios/{id}", async (int id, UsuarioWriteDto usuario, IUsuariosLogica logica) =>
         {
             if (id != usuario.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class UsuariosEndpoint
             if (existingUsuario is null)
                 return Results.NotFound();
 
-            await logica.UpdateUsuarioAsync(usuario);
+            await logica.UpdateUsuarioAsync(usuario.ToEntity());
             return Results.NoContent();
         });
 

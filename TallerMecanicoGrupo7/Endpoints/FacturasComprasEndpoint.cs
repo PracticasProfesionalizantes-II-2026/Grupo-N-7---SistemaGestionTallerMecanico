@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class FacturasComprasEndpoint
 {
@@ -9,22 +9,23 @@ public static class FacturasComprasEndpoint
         app.MapGet("/api/facturas-compras", async (IFacturasComprasLogica logica) =>
         {
             var facturasCompras = await logica.GetFacturasComprasAsync();
-            return Results.Ok(facturasCompras);
+            return Results.Ok(facturasCompras.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/facturas-compras/{id}", async (int id, IFacturasComprasLogica logica) =>
         {
             var facturaCompra = await logica.GetFacturaCompraByIdAsync(id);
-            return facturaCompra is not null ? Results.Ok(facturaCompra) : Results.NotFound();
+            return facturaCompra is not null ? Results.Ok(facturaCompra.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/facturas-compras", async (FacturaCompra facturaCompra, IFacturasComprasLogica logica) =>
+        app.MapPost("/api/facturas-compras", async (FacturaCompraWriteDto facturaCompra, IFacturasComprasLogica logica) =>
         {
-            await logica.AddFacturaCompraAsync(facturaCompra);
-            return Results.Created($"/api/facturas-compras/{facturaCompra.Id}", facturaCompra);
+            var entity = facturaCompra.ToEntity();
+            await logica.AddFacturaCompraAsync(entity);
+            return Results.Created($"/api/facturas-compras/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/facturas-compras/{id}", async (int id, FacturaCompra facturaCompra, IFacturasComprasLogica logica) =>
+        app.MapPut("/api/facturas-compras/{id}", async (int id, FacturaCompraWriteDto facturaCompra, IFacturasComprasLogica logica) =>
         {
             if (id != facturaCompra.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class FacturasComprasEndpoint
             if (existingFacturaCompra is null)
                 return Results.NotFound();
 
-            await logica.UpdateFacturaCompraAsync(facturaCompra);
+            await logica.UpdateFacturaCompraAsync(facturaCompra.ToEntity());
             return Results.NoContent();
         });
 

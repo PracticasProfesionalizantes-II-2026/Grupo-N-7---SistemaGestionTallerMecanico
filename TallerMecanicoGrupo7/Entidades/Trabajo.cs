@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 
 namespace ClasesTallerMecanico.Models
 {
@@ -12,7 +11,6 @@ namespace ClasesTallerMecanico.Models
         [Required]
         [ForeignKey("CategoriaTrabajo")]
         public int IdCategoria { get; set; }
-        [JsonIgnore]
         public CategoriaTrabajo CategoriaTrabajo { get; set; } // Relacion 1 a 1 con CategoriaTrabajo
 
         [Required(ErrorMessage = "El nombre es requerida.")]
@@ -30,7 +28,6 @@ namespace ClasesTallerMecanico.Models
 
         public bool Activo { get; set; } = true;
 
-        [JsonIgnore]
         public ICollection<TrabajoPorTurno> TrabajosPorTurno { get; set; } // Relacion 1 a muchos con TrabajoPorTurno
     }
 }

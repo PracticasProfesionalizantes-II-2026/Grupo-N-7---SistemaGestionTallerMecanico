@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class ProveedoresEndpoint
 {
@@ -9,22 +9,23 @@ public static class ProveedoresEndpoint
         app.MapGet("/api/proveedores", async (IProveedoresLogica logica) =>
         {
             var proveedores = await logica.GetProveedoresAsync();
-            return Results.Ok(proveedores);
+            return Results.Ok(proveedores.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/proveedores/{id}", async (int id, IProveedoresLogica logica) =>
         {
             var proveedor = await logica.GetProveedorByIdAsync(id);
-            return proveedor is not null ? Results.Ok(proveedor) : Results.NotFound();
+            return proveedor is not null ? Results.Ok(proveedor.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/proveedores", async (Proveedor proveedor, IProveedoresLogica logica) =>
+        app.MapPost("/api/proveedores", async (ProveedorWriteDto proveedor, IProveedoresLogica logica) =>
         {
-            await logica.AddProveedorAsync(proveedor);
-            return Results.Created($"/api/proveedores/{proveedor.Id}", proveedor);
+            var entity = proveedor.ToEntity();
+            await logica.AddProveedorAsync(entity);
+            return Results.Created($"/api/proveedores/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/proveedores/{id}", async (int id, Proveedor proveedor, IProveedoresLogica logica) =>
+        app.MapPut("/api/proveedores/{id}", async (int id, ProveedorWriteDto proveedor, IProveedoresLogica logica) =>
         {
             if (id != proveedor.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class ProveedoresEndpoint
             if (existingProveedor is null)
                 return Results.NotFound();
 
-            await logica.UpdateProveedorAsync(proveedor);
+            await logica.UpdateProveedorAsync(proveedor.ToEntity());
             return Results.NoContent();
         });
 

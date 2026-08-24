@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class TurnosEndpoint
 {
@@ -9,22 +9,23 @@ public static class TurnosEndpoint
         app.MapGet("/api/turnos", async (ITurnosLogica logica) =>
         {
             var turnos = await logica.GetTurnosAsync();
-            return Results.Ok(turnos);
+            return Results.Ok(turnos.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/turnos/{id}", async (int id, ITurnosLogica logica) =>
         {
             var turno = await logica.GetTurnoByIdAsync(id);
-            return turno is not null ? Results.Ok(turno) : Results.NotFound();
+            return turno is not null ? Results.Ok(turno.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/turnos", async (Turno turno, ITurnosLogica logica) =>
+        app.MapPost("/api/turnos", async (TurnoWriteDto turno, ITurnosLogica logica) =>
         {
-            await logica.AddTurnoAsync(turno);
-            return Results.Created($"/api/turnos/{turno.Id}", turno);
+            var entity = turno.ToEntity();
+            await logica.AddTurnoAsync(entity);
+            return Results.Created($"/api/turnos/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/turnos/{id}", async (int id, Turno turno, ITurnosLogica logica) =>
+        app.MapPut("/api/turnos/{id}", async (int id, TurnoWriteDto turno, ITurnosLogica logica) =>
         {
             if (id != turno.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class TurnosEndpoint
             if (existingTurno is null)
                 return Results.NotFound();
 
-            await logica.UpdateTurnoAsync(turno);
+            await logica.UpdateTurnoAsync(turno.ToEntity());
             return Results.NoContent();
         });
 

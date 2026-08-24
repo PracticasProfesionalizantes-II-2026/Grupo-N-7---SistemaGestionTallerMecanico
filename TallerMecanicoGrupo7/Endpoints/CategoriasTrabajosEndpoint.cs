@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class CategoriasTrabajosEndpoint
 {
@@ -9,22 +9,23 @@ public static class CategoriasTrabajosEndpoint
         app.MapGet("/api/categorias-trabajos", async (ICategoriasTrabajosLogica logica) =>
         {
             var categorias = await logica.GetCategoriasAsync();
-            return Results.Ok(categorias);
+            return Results.Ok(categorias.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/categorias-trabajos/{id}", async (int id, ICategoriasTrabajosLogica logica) =>
         {
             var categoria = await logica.GetCategoriaByIdAsync(id);
-            return categoria is not null ? Results.Ok(categoria) : Results.NotFound();
+            return categoria is not null ? Results.Ok(categoria.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/categorias-trabajos", async (CategoriaTrabajo categoria, ICategoriasTrabajosLogica logica) =>
+        app.MapPost("/api/categorias-trabajos", async (CategoriaTrabajoWriteDto categoria, ICategoriasTrabajosLogica logica) =>
         {
-            await logica.AddCategoriaAsync(categoria);
-            return Results.Created($"/api/categorias-trabajos/{categoria.Id}", categoria);
+            var entity = categoria.ToEntity();
+            await logica.AddCategoriaAsync(entity);
+            return Results.Created($"/api/categorias-trabajos/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/categorias-trabajos/{id}", async (int id, CategoriaTrabajo categoria, ICategoriasTrabajosLogica logica) =>
+        app.MapPut("/api/categorias-trabajos/{id}", async (int id, CategoriaTrabajoWriteDto categoria, ICategoriasTrabajosLogica logica) =>
         {
             if (id != categoria.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class CategoriasTrabajosEndpoint
             if (existingCategoria is null)
                 return Results.NotFound();
 
-            await logica.UpdateCategoriaAsync(categoria);
+            await logica.UpdateCategoriaAsync(categoria.ToEntity());
             return Results.NoContent();
         });
 

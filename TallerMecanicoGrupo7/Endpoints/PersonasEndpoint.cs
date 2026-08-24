@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class PersonasEndpoint
 {
@@ -9,22 +9,26 @@ public static class PersonasEndpoint
         app.MapGet("/api/personas", async (IPersonasLogica logica) =>
         {
             var personas = await logica.GetPersonasAsync();
-            return Results.Ok(personas);
+            return Results.Ok(personas.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/personas/{id}", async (int id, IPersonasLogica logica) =>
         {
             var persona = await logica.GetPersonaByIdAsync(id);
-            return persona is not null ? Results.Ok(persona) : Results.NotFound();
+            return persona is not null ? Results.Ok(persona.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/personas", async (Persona persona, IPersonasLogica logica) =>
+        app.MapPost("/api/personas", async (PersonaWriteDto persona, IPersonasLogica logica) =>
         {
-            await logica.AddPersonaAsync(persona);
-            return Results.Created($"/api/personas/{persona.Id}", persona);
+            var entity = persona.ToEntity();
+            if (entity is null)
+                return Results.BadRequest();
+
+            await logica.AddPersonaAsync(entity);
+            return Results.Created($"/api/personas/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/personas/{id}", async (int id, Persona persona, IPersonasLogica logica) =>
+        app.MapPut("/api/personas/{id}", async (int id, PersonaWriteDto persona, IPersonasLogica logica) =>
         {
             if (id != persona.Id)
                 return Results.BadRequest();
@@ -33,7 +37,12 @@ public static class PersonasEndpoint
             if (existingPersona is null)
                 return Results.NotFound();
 
-            await logica.UpdatePersonaAsync(persona);
+            var entity = persona.ToEntity();
+            if (entity is null)
+                return Results.BadRequest();
+
+            entity.Id = id;
+            await logica.UpdatePersonaAsync(entity);
             return Results.NoContent();
         });
 

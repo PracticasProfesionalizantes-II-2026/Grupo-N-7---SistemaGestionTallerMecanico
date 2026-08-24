@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class FormasPagoEndpoint
 {
@@ -9,22 +9,23 @@ public static class FormasPagoEndpoint
         app.MapGet("/api/formas-pago", async (IFormasPagoLogica logica) =>
         {
             var formasPago = await logica.GetFormasPagoAsync();
-            return Results.Ok(formasPago);
+            return Results.Ok(formasPago.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/formas-pago/{id}", async (int id, IFormasPagoLogica logica) =>
         {
             var formaPago = await logica.GetFormaPagoByIdAsync(id);
-            return formaPago is not null ? Results.Ok(formaPago) : Results.NotFound();
+            return formaPago is not null ? Results.Ok(formaPago.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/formas-pago", async (FormaPago formaPago, IFormasPagoLogica logica) =>
+        app.MapPost("/api/formas-pago", async (FormaPagoWriteDto formaPago, IFormasPagoLogica logica) =>
         {
-            await logica.AddFormaPagoAsync(formaPago);
-            return Results.Created($"/api/formas-pago/{formaPago.Id}", formaPago);
+            var entity = formaPago.ToEntity();
+            await logica.AddFormaPagoAsync(entity);
+            return Results.Created($"/api/formas-pago/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/formas-pago/{id}", async (int id, FormaPago formaPago, IFormasPagoLogica logica) =>
+        app.MapPut("/api/formas-pago/{id}", async (int id, FormaPagoWriteDto formaPago, IFormasPagoLogica logica) =>
         {
             if (id != formaPago.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class FormasPagoEndpoint
             if (existingFormaPago is null)
                 return Results.NotFound();
 
-            await logica.UpdateFormaPagoAsync(formaPago);
+            await logica.UpdateFormaPagoAsync(formaPago.ToEntity());
             return Results.NoContent();
         });
 

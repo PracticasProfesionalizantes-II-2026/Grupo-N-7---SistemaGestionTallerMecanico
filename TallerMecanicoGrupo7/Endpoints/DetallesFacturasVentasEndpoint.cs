@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class DetallesFacturasVentasEndpoint
 {
@@ -9,22 +9,23 @@ public static class DetallesFacturasVentasEndpoint
         app.MapGet("/api/detalles-facturas-ventas", async (IDetallesFacturasVentasLogica logica) =>
         {
             var detallesFacturasVentas = await logica.GetDetallesFacturasVentasAsync();
-            return Results.Ok(detallesFacturasVentas);
+            return Results.Ok(detallesFacturasVentas.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/detalles-facturas-ventas/{id}", async (int id, IDetallesFacturasVentasLogica logica) =>
         {
             var detalleFacturaVenta = await logica.GetDetalleFacturaVentaByIdAsync(id);
-            return detalleFacturaVenta is not null ? Results.Ok(detalleFacturaVenta) : Results.NotFound();
+            return detalleFacturaVenta is not null ? Results.Ok(detalleFacturaVenta.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/detalles-facturas-ventas", async (DetalleFacturaVenta detalleFacturaVenta, IDetallesFacturasVentasLogica logica) =>
+        app.MapPost("/api/detalles-facturas-ventas", async (DetalleFacturaVentaWriteDto detalleFacturaVenta, IDetallesFacturasVentasLogica logica) =>
         {
-            await logica.AddDetalleFacturaVentaAsync(detalleFacturaVenta);
-            return Results.Created($"/api/detalles-facturas-ventas/{detalleFacturaVenta.Id}", detalleFacturaVenta);
+            var entity = detalleFacturaVenta.ToEntity();
+            await logica.AddDetalleFacturaVentaAsync(entity);
+            return Results.Created($"/api/detalles-facturas-ventas/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/detalles-facturas-ventas/{id}", async (int id, DetalleFacturaVenta detalleFacturaVenta, IDetallesFacturasVentasLogica logica) =>
+        app.MapPut("/api/detalles-facturas-ventas/{id}", async (int id, DetalleFacturaVentaWriteDto detalleFacturaVenta, IDetallesFacturasVentasLogica logica) =>
         {
             if (id != detalleFacturaVenta.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class DetallesFacturasVentasEndpoint
             if (existingDetalleFacturaVenta is null)
                 return Results.NotFound();
 
-            await logica.UpdateDetalleFacturaVentaAsync(detalleFacturaVenta);
+            await logica.UpdateDetalleFacturaVentaAsync(detalleFacturaVenta.ToEntity());
             return Results.NoContent();
         });
 

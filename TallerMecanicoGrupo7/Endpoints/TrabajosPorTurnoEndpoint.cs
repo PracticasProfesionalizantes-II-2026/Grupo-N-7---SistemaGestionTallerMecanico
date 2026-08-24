@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class TrabajosPorTurnoEndpoint
 {
@@ -9,22 +9,23 @@ public static class TrabajosPorTurnoEndpoint
         app.MapGet("/api/trabajos-por-turno", async (ITrabajosPorTurnoLogica logica) =>
         {
             var trabajosPorTurno = await logica.GetTrabajosPorTurnoAsync();
-            return Results.Ok(trabajosPorTurno);
+            return Results.Ok(trabajosPorTurno.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/trabajos-por-turno/{id}", async (int id, ITrabajosPorTurnoLogica logica) =>
         {
             var trabajoPorTurno = await logica.GetTrabajoPorTurnoByIdAsync(id);
-            return trabajoPorTurno is not null ? Results.Ok(trabajoPorTurno) : Results.NotFound();
+            return trabajoPorTurno is not null ? Results.Ok(trabajoPorTurno.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/trabajos-por-turno", async (TrabajoPorTurno trabajoPorTurno, ITrabajosPorTurnoLogica logica) =>
+        app.MapPost("/api/trabajos-por-turno", async (TrabajoPorTurnoWriteDto trabajoPorTurno, ITrabajosPorTurnoLogica logica) =>
         {
-            await logica.AddTrabajoPorTurnoAsync(trabajoPorTurno);
-            return Results.Created($"/api/trabajos-por-turno/{trabajoPorTurno.Id}", trabajoPorTurno);
+            var entity = trabajoPorTurno.ToEntity();
+            await logica.AddTrabajoPorTurnoAsync(entity);
+            return Results.Created($"/api/trabajos-por-turno/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/trabajos-por-turno/{id}", async (int id, TrabajoPorTurno trabajoPorTurno, ITrabajosPorTurnoLogica logica) =>
+        app.MapPut("/api/trabajos-por-turno/{id}", async (int id, TrabajoPorTurnoWriteDto trabajoPorTurno, ITrabajosPorTurnoLogica logica) =>
         {
             if (id != trabajoPorTurno.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class TrabajosPorTurnoEndpoint
             if (existingTrabajoPorTurno is null)
                 return Results.NotFound();
 
-            await logica.UpdateTrabajoPorTurnoAsync(trabajoPorTurno);
+            await logica.UpdateTrabajoPorTurnoAsync(trabajoPorTurno.ToEntity());
             return Results.NoContent();
         });
 

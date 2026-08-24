@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class TrabajosEndpoint
 {
@@ -9,22 +9,23 @@ public static class TrabajosEndpoint
         app.MapGet("/api/trabajos", async (ITrabajosLogica logica) =>
         {
             var trabajos = await logica.GetTrabajosAsync();
-            return Results.Ok(trabajos);
+            return Results.Ok(trabajos.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/trabajos/{id}", async (int id, ITrabajosLogica logica) =>
         {
             var trabajo = await logica.GetTrabajoByIdAsync(id);
-            return trabajo is not null ? Results.Ok(trabajo) : Results.NotFound();
+            return trabajo is not null ? Results.Ok(trabajo.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/trabajos", async (Trabajo trabajo, ITrabajosLogica logica) =>
+        app.MapPost("/api/trabajos", async (TrabajoWriteDto trabajo, ITrabajosLogica logica) =>
         {
-            await logica.AddTrabajoAsync(trabajo);
-            return Results.Created($"/api/trabajos/{trabajo.Id}", trabajo);
+            var entity = trabajo.ToEntity();
+            await logica.AddTrabajoAsync(entity);
+            return Results.Created($"/api/trabajos/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/trabajos/{id}", async (int id, Trabajo trabajo, ITrabajosLogica logica) =>
+        app.MapPut("/api/trabajos/{id}", async (int id, TrabajoWriteDto trabajo, ITrabajosLogica logica) =>
         {
             if (id != trabajo.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class TrabajosEndpoint
             if (existingTrabajo is null)
                 return Results.NotFound();
 
-            await logica.UpdateTrabajoAsync(trabajo);
+            await logica.UpdateTrabajoAsync(trabajo.ToEntity());
             return Results.NoContent();
         });
 

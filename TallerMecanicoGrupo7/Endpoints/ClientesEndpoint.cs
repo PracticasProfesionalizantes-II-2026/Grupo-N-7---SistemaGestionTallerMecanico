@@ -1,6 +1,6 @@
 namespace ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
-using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 
 public static class ClientesEndpoint
 {
@@ -9,22 +9,23 @@ public static class ClientesEndpoint
         app.MapGet("/api/clientes", async (IClientesLogica logica) =>
         {
             var clientes = await logica.GetClientesAsync();
-            return Results.Ok(clientes);
+            return Results.Ok(clientes.Select(x => x.ToReadDto()));
         });
 
         app.MapGet("/api/clientes/{id}", async (int id, IClientesLogica logica) =>
         {
             var cliente = await logica.GetClienteByIdAsync(id);
-            return cliente is not null ? Results.Ok(cliente) : Results.NotFound();
+            return cliente is not null ? Results.Ok(cliente.ToReadDto()) : Results.NotFound();
         });
 
-        app.MapPost("/api/clientes", async (Cliente cliente, IClientesLogica logica) =>
+        app.MapPost("/api/clientes", async (ClienteWriteDto cliente, IClientesLogica logica) =>
         {
-            await logica.AddClienteAsync(cliente);
-            return Results.Created($"/api/clientes/{cliente.Id}", cliente);
+            var entity = cliente.ToEntity();
+            await logica.AddClienteAsync(entity);
+            return Results.Created($"/api/clientes/{entity.Id}", entity.ToReadDto());
         });
 
-        app.MapPut("/api/clientes/{id}", async (int id, Cliente cliente, IClientesLogica logica) =>
+        app.MapPut("/api/clientes/{id}", async (int id, ClienteWriteDto cliente, IClientesLogica logica) =>
         {
             if (id != cliente.Id)
                 return Results.BadRequest();
@@ -33,7 +34,7 @@ public static class ClientesEndpoint
             if (existingCliente is null)
                 return Results.NotFound();
 
-            await logica.UpdateClienteAsync(cliente);
+            await logica.UpdateClienteAsync(cliente.ToEntity());
             return Results.NoContent();
         });
 

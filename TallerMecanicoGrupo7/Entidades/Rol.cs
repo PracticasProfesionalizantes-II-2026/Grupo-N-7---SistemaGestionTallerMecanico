@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 namespace ClasesTallerMecanico.Models
 {
@@ -12,7 +11,6 @@ namespace ClasesTallerMecanico.Models
         [MaxLength(50)]
         public string Nombre { get; set; }
 
-        [JsonIgnore]
         public ICollection<Usuario> Usuarios { get; set; } // Relación uno a muchos con Usuario
     }
 }
