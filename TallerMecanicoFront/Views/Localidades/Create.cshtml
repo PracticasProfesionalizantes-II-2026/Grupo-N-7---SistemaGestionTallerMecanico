@@ -1,0 +1,80 @@
+@model TallerMecanicoFront.Models.Localidad
+@{
+    ViewData["Title"] = "Crear Localidad";
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-4">Nueva Localidad</h1>
+
+                <form asp-action="Create" method="post" class="needs-validation" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Nombre" class="form-label"></label>
+                        <input asp-for="Nombre"
+                               class="form-control"
+                               maxlength="100"
+                               required />
+                        <span asp-validation-for="Nombre" class="text-danger"></span>
+                        <div class="invalid-feedback">
+                            Ingresa el nombre de la localidad.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="CodigoPostal" class="form-label">Codigo Postal</label>
+                        <input asp-for="CodigoPostal"
+                               type="number"
+                               class="form-control"
+                               min="1000"
+                               max="99999"
+                               required />
+                        <span asp-validation-for="CodigoPostal" class="text-danger"></span>
+                        <div class="invalid-feedback">
+                            Ingresa un codigo postal valido.
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Provincia" class="form-label"></label>
+                        <input asp-for="Provincia"
+                               class="form-control"
+                               maxlength="50"
+                               required />
+                        <span asp-validation-for="Provincia" class="text-danger"></span>
+                        <div class="invalid-feedback">
+                            Ingresa la provincia.
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            'use strict';
+            const forms = document.querySelectorAll('.needs-validation');
+            Array.from(forms).forEach(form => {
+                form.addEventListener('submit', event => {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })();
+    </script>
+}
