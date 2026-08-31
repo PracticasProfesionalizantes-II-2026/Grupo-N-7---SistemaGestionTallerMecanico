@@ -1,0 +1,58 @@
+@model TallerMecanicoFront.Models.DetalleTurno
+@using TallerMecanicoFront.Models
+@{
+    ViewData["Title"] = "Editar Detalle de Turno";
+    var turnos = ViewBag.Turnos as IEnumerable<Turno> ?? Enumerable.Empty<Turno>();
+    var localidades = ViewBag.Localidades as IEnumerable<Localidad> ?? Enumerable.Empty<Localidad>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-9">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-4">Editar Detalle de Turno</h1>
+                <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+                    <input asp-for="Id" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="IdTurno" class="form-label">Turno</label>
+                            <select asp-for="IdTurno" class="form-select" required>
+                                <option value="">Seleccione un turno</option>
+                                @foreach (var turno in turnos)
+                                {
+                                    <option value="@turno.Id">Turno N° @turno.Id - Fecha @turno.Fecha.ToString("dd/MM/yyyy")</option>
+                                }
+                            </select>
+                            <span asp-validation-for="IdTurno" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="IdLocalidad" class="form-label">Localidad</label>
+                            <select asp-for="IdLocalidad" class="form-select">
+                                <option value="">Seleccione una localidad</option>
+                                @foreach (var localidad in localidades)
+                                {
+                                    <option value="@localidad.Id">@localidad.Nombre</option>
+                                }
+                            </select>
+                            <span asp-validation-for="IdLocalidad" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="DomicilioTrabajo" class="form-label">Domicilio de trabajo</label>
+                            <textarea asp-for="DomicilioTrabajo" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="DomicilioTrabajo" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
