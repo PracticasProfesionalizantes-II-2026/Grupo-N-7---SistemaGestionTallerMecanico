@@ -1,0 +1,115 @@
+@model TallerMecanicoFront.Models.DetalleFacturaVenta
+@using TallerMecanicoFront.Models
+@{
+    ViewData["Title"] = "Editar detalle de factura de venta";
+    var facturas = ViewBag.FacturasVentas as IEnumerable<FacturaVenta> ?? Enumerable.Empty<FacturaVenta>();
+    var trabajos = ViewBag.TrabajosPorTurno as IEnumerable<TrabajoPorTurno> ?? Enumerable.Empty<TrabajoPorTurno>();
+    var insumos = ViewBag.InsumosPorTrabajo as IEnumerable<InsumoPorTrabajo> ?? Enumerable.Empty<InsumoPorTrabajo>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-9">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-4">Editar detalle de factura de venta</h1>
+                <form asp-action="Edit" method="post">
+                    <input asp-for="Id" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="IdFactura" class="form-label">Factura de venta</label>
+                            <select asp-for="IdFactura" class="form-select" required>
+                                <option value="">Seleccione una factura</option>
+                                @foreach (var factura in facturas)
+                                {
+                                    <option value="@factura.Id">Factura N° @factura.Id - Cliente @factura.IdCliente - @factura.FechaEmision.ToString("dd/MM/yyyy") - Total $@factura.TotalFactura.ToString("0.00")</option>
+                                }
+                            </select>
+                            <span asp-validation-for="IdFactura" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="IdTrabajoPorTurno" class="form-label">Trabajo por turno</label>
+                            <select asp-for="IdTrabajoPorTurno" class="form-select">
+                                <option value="">Seleccione un trabajo</option>
+                                @foreach (var trabajo in trabajos)
+                                {
+                                    <option value="@trabajo.Id">Trabajo N° @trabajo.Id - Turno @trabajo.IdTurno - Usuario @trabajo.IdUsuario - Hs: @trabajo.HsHombre</option>
+                                }
+                            </select>
+                            <span asp-validation-for="IdTrabajoPorTurno" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="IdInsumoPorTrabajo" class="form-label">Insumo por trabajo</label>
+                            <select asp-for="IdInsumoPorTrabajo" class="form-select">
+                                <option value="">Seleccione un insumo</option>
+                                @foreach (var insumo in insumos)
+                                {
+                                    <option value="@insumo.Id">Insumo N° @insumo.Id - TrabajoTurno @insumo.IdTrabajoTurno - Cantidad: @insumo.Cantidad</option>
+                                }
+                            </select>
+                            <span asp-validation-for="IdInsumoPorTrabajo" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Cantidad" class="form-label"></label>
+                            <input asp-for="Cantidad" type="number" step="0.01" min="0.01" class="form-control" required />
+                            <span asp-validation-for="Cantidad" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="DescripcionItem" class="form-label"></label>
+                            <textarea asp-for="DescripcionItem" class="form-control" rows="3" required></textarea>
+                            <span asp-validation-for="DescripcionItem" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="PrecioUnitario" class="form-label"></label>
+                            <input asp-for="PrecioUnitario" type="number" step="0.01" min="0" class="form-control" required />
+                            <span asp-validation-for="PrecioUnitario" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="TotalDetalle" class="form-label"></label>
+                            <input asp-for="TotalDetalle" type="number" step="0.01" min="0" class="form-control" readonly required />
+                            <span asp-validation-for="TotalDetalle" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="CostoUnitarioInsumoHistorico" class="form-label"></label>
+                            <input asp-for="CostoUnitarioInsumoHistorico" type="number" step="0.01" min="0" class="form-control" required />
+                            <span asp-validation-for="CostoUnitarioInsumoHistorico" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('form');
+            if (!form) return;
+
+            const cantidadInput = form.querySelector('input[name="Cantidad"]');
+            const precioInput = form.querySelector('input[name="PrecioUnitario"]');
+            const totalInput = form.querySelector('input[name="TotalDetalle"]');
+
+            if (!cantidadInput || !precioInput || !totalInput) return;
+
+            const calcularTotal = () => {
+                const cantidad = Number.parseFloat(cantidadInput.value) || 0;
+                const precio = Number.parseFloat(precioInput.value) || 0;
+                const total = cantidad * precio;
+                totalInput.value = total.toFixed(2);
+            };
+
+            cantidadInput.addEventListener('input', calcularTotal);
+            precioInput.addEventListener('input', calcularTotal);
+            calcularTotal();
+        });
+    </script>
+}

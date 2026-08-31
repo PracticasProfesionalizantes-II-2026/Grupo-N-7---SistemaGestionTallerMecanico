@@ -4,7 +4,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient("TallerApi", client =>
 {
-    var baseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7029/";
+    var baseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5237/";
     client.BaseAddress = new Uri(baseUrl);
 });
 
