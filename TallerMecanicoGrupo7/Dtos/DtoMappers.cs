@@ -221,7 +221,8 @@ public static class DtoMappers
         Activo = source.Activo,
         Dni = source.Dni,
         FechaNacimiento = source.FechaNacimiento,
-        IdRol = source.IdRol
+        IdRol = source.IdRol,
+        ContraseñaHash = source.ContraseñaHash
     };
 
     public static Usuario ToEntity(this UsuarioWriteDto source) => new()

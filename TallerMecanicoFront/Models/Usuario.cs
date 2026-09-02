@@ -42,6 +42,8 @@ public class Usuario
     [Range(1, int.MaxValue, ErrorMessage = "Selecciona un rol.")]
     public int IdRol { get; set; }
 
+    public string NombreRol { get; set; } = string.Empty;
+
     [Required(ErrorMessage = "La contraseña es requerida.")]
     [StringLength(255, MinimumLength = 5, ErrorMessage = "La contraseña debe tener entre 5 y 255 caracteres.")]
     [DataType(DataType.Password)]

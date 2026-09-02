@@ -31,6 +31,7 @@ public class ClientesRepositorio : IClientesRepositorio
 
     public async Task UpdateClienteAsync(Cliente cliente)
     {
+        _context.DetachTrackedEntity(cliente);
         _context.Clientes.Update(cliente);
         await _context.SaveChangesAsync();
     }

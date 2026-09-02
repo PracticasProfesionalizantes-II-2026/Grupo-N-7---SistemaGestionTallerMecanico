@@ -31,6 +31,7 @@ public class ProveedoresRepositorio : IProveedoresRepositorio
 
     public async Task UpdateProveedorAsync(Proveedor proveedor)
     {
+        _context.DetachTrackedEntity(proveedor);
         _context.Proveedores.Update(proveedor);
         await _context.SaveChangesAsync();
     }

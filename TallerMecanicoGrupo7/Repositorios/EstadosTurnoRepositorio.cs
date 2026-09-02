@@ -31,6 +31,7 @@ public class EstadosTurnoRepositorio : IEstadosTurnoRepositorio
 
     public async Task UpdateEstadoTurnoAsync(EstadoTurno estadoTurno)
     {
+        _context.DetachTrackedEntity(estadoTurno);
         _context.EstadosTurno.Update(estadoTurno);
         await _context.SaveChangesAsync();
     }

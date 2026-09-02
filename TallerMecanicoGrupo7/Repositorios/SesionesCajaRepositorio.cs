@@ -31,6 +31,7 @@ public class SesionesCajaRepositorio : ISesionesCajaRepositorio
 
     public async Task UpdateSesionCajaAsync(SesionCaja sesionCaja)
     {
+        _context.DetachTrackedEntity(sesionCaja);
         _context.SesionesCaja.Update(sesionCaja);
         await _context.SaveChangesAsync();
     }

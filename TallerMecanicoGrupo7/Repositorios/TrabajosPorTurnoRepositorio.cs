@@ -31,6 +31,7 @@ public class TrabajosPorTurnoRepositorio : ITrabajosPorTurnoRepositorio
 
     public async Task UpdateTrabajoPorTurnoAsync(TrabajoPorTurno trabajoPorTurno)
     {
+        _context.DetachTrackedEntity(trabajoPorTurno);
         _context.TrabajosPorTurno.Update(trabajoPorTurno);
         await _context.SaveChangesAsync();
     }

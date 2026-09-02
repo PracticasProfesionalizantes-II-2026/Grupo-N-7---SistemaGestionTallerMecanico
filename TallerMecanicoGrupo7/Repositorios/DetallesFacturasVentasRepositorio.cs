@@ -31,6 +31,7 @@ public class DetallesFacturasVentasRepositorio : IDetallesFacturasVentasReposito
 
     public async Task UpdateDetalleFacturaVentaAsync(DetalleFacturaVenta detalleFacturaVenta)
     {
+        _context.DetachTrackedEntity(detalleFacturaVenta);
         _context.DetallesFacturasVentas.Update(detalleFacturaVenta);
         await _context.SaveChangesAsync();
     }

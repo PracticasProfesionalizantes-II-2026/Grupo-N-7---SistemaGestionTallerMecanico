@@ -180,6 +180,7 @@ public class UsuarioReadDto : PersonaReadDto
     public string Dni { get; set; } = string.Empty;
     public DateTime? FechaNacimiento { get; set; }
     public int IdRol { get; set; }
+    public string ContraseñaHash { get; set; } = string.Empty;
 }
 
 public class UsuarioWriteDto : PersonaWriteDto

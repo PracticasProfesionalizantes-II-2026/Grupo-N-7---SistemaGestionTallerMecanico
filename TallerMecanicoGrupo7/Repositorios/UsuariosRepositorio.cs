@@ -31,7 +31,11 @@ public class UsuariosRepositorio : IUsuariosRepositorio
 
     public async Task UpdateUsuarioAsync(Usuario usuario)
     {
-        _context.Usuarios.Update(usuario);
+        var usuarioExistente = await _context.Usuarios.FindAsync(usuario.Id);
+        if (usuarioExistente is null)
+            return;
+
+        _context.Entry(usuarioExistente).CurrentValues.SetValues(usuario);
         await _context.SaveChangesAsync();
     }
 

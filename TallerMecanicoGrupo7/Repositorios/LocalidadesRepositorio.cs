@@ -31,6 +31,7 @@ public class LocalidadesRepositorio : ILocalidadesRepositorio
 
     public async Task UpdateLocalidadAsync(Localidad localidad)
     {
+        _context.DetachTrackedEntity(localidad);
         _context.Localidades.Update(localidad);
         await _context.SaveChangesAsync();
     }
