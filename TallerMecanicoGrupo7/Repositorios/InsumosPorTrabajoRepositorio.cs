@@ -31,6 +31,7 @@ public class InsumosPorTrabajoRepositorio : IInsumosPorTrabajoRepositorio
 
     public async Task UpdateInsumoPorTrabajoAsync(InsumoPorTrabajo insumoPorTrabajo)
     {
+        _context.DetachTrackedEntity(insumoPorTrabajo);
         _context.InsumosPorTrabajo.Update(insumoPorTrabajo);
         await _context.SaveChangesAsync();
     }

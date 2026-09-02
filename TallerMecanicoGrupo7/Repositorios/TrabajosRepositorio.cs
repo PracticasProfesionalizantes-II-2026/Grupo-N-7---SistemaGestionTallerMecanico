@@ -31,6 +31,7 @@ public class TrabajosRepositorio : ITrabajosRepositorio
 
     public async Task UpdateTrabajoAsync(Trabajo trabajo)
     {
+        _context.DetachTrackedEntity(trabajo);
         _context.Trabajos.Update(trabajo);
         await _context.SaveChangesAsync();
     }

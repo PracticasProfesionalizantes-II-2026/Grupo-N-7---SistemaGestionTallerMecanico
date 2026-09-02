@@ -31,6 +31,7 @@ public class FacturasVentasRepositorio : IFacturasVentasRepositorio
 
     public async Task UpdateFacturaVentaAsync(FacturaVenta facturaVenta)
     {
+        _context.DetachTrackedEntity(facturaVenta);
         _context.FacturasVentas.Update(facturaVenta);
         await _context.SaveChangesAsync();
     }

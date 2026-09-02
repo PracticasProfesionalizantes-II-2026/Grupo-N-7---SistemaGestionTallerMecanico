@@ -31,6 +31,7 @@ public class TurnosRepositorio : ITurnosRepositorio
 
     public async Task UpdateTurnoAsync(Turno turno)
     {
+        _context.DetachTrackedEntity(turno);
         _context.Turnos.Update(turno);
         await _context.SaveChangesAsync();
     }

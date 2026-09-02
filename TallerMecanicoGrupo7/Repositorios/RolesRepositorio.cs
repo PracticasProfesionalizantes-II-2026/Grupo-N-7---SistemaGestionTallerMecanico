@@ -31,6 +31,7 @@ public class RolesRepositorio : IRolesRepositorio
 
     public async Task UpdateRolAsync(Rol rol)
     {
+        _context.DetachTrackedEntity(rol);
         _context.Roles.Update(rol);
         await _context.SaveChangesAsync();
     }

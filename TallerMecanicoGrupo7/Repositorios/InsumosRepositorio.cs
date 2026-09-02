@@ -31,6 +31,7 @@ public class InsumosRepositorio : IInsumosRepositorio
 
     public async Task UpdateInsumoAsync(Insumo insumo)
     {
+        _context.DetachTrackedEntity(insumo);
         _context.Insumos.Update(insumo);
         await _context.SaveChangesAsync();
     }

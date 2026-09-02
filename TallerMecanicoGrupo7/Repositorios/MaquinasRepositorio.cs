@@ -31,6 +31,7 @@ public class MaquinasRepositorio : IMaquinasRepositorio
 
     public async Task UpdateMaquinaAsync(Maquina maquina)
     {
+        _context.DetachTrackedEntity(maquina);
         _context.Maquinas.Update(maquina);
         await _context.SaveChangesAsync();
     }

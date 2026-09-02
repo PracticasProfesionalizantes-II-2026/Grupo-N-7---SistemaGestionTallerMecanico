@@ -31,6 +31,7 @@ public class PersonasRepositorio : IPersonasRepositorio
 
     public async Task UpdatePersonaAsync(Persona persona)
     {
+        _context.DetachTrackedEntity(persona);
         _context.Personas.Update(persona);
         await _context.SaveChangesAsync();
     }

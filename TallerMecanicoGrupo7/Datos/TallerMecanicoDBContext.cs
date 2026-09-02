@@ -170,5 +170,18 @@ namespace ClasesTallerMecanico.Datos
                 }
             }
         }
+
+        public void DetachTrackedEntity<TEntity>(TEntity entity) where TEntity : class
+        {
+            var entityId = Entry(entity).Property("Id").CurrentValue;
+            var trackedEntity = ChangeTracker.Entries<TEntity>()
+                .FirstOrDefault(entry => !ReferenceEquals(entry.Entity, entity)
+                    && Equals(entry.Property("Id").CurrentValue, entityId));
+
+            if (trackedEntity is not null)
+            {
+                trackedEntity.State = EntityState.Detached;
+            }
+        }
     }
 }

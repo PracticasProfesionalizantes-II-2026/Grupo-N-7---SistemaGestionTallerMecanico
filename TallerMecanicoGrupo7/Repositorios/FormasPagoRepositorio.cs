@@ -31,6 +31,7 @@ public class FormasPagoRepositorio : IFormasPagoRepositorio
 
     public async Task UpdateFormaPagoAsync(FormaPago formaPago)
     {
+        _context.DetachTrackedEntity(formaPago);
         _context.FormasPago.Update(formaPago);
         await _context.SaveChangesAsync();
     }
