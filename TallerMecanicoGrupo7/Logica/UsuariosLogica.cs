@@ -22,6 +22,11 @@ public class UsuariosLogica : IUsuariosLogica
         return _usuariosRepositorio.GetUsuarioByIdAsync(id);
     }
 
+    public Task<Usuario?> GetUsuarioByCredencialesAsync(string correo, string contrasena)
+    {
+        return _usuariosRepositorio.GetUsuarioByCredencialesAsync(correo, contrasena);
+    }
+
     public Task AddUsuarioAsync(Usuario usuario)
     {
         return _usuariosRepositorio.AddUsuarioAsync(usuario);
