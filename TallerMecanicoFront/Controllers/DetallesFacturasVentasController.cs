@@ -176,11 +176,18 @@ public class DetallesFacturasVentasController : Controller
             ? await insumosResponse.Content.ReadFromJsonAsync<List<InsumoPorTrabajo>>() ?? new List<InsumoPorTrabajo>()
             : new List<InsumoPorTrabajo>();
 
+        var insumosCatalogoResponse = await _httpClient.GetAsync("api/insumos");
+        ViewBag.Insumos = insumosCatalogoResponse.IsSuccessStatusCode
+            ? await insumosCatalogoResponse.Content.ReadFromJsonAsync<List<Insumo>>() ?? new List<Insumo>()
+            : new List<Insumo>();
+
         if (!facturasResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar las facturas de venta.");
         if (!trabajosResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los trabajos por turno.");
         if (!insumosResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los insumos por trabajo.");
+        if (!insumosCatalogoResponse.IsSuccessStatusCode)
+            ModelState.AddModelError(string.Empty, "No se pudieron cargar los precios de los insumos.");
     }
 }

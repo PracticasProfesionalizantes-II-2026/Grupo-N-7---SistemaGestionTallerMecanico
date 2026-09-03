@@ -49,8 +49,9 @@ public class DetalleFacturaCompra : IValidatableObject
             results.Add(new ValidationResult("El precio unitario debe ser mayor a cero.", new[] { nameof(PrecioUnitario) }));
         }
 
-        var totalCalculado = Cantidad * PrecioUnitario;
-        if (Math.Abs(TotalCompra - totalCalculado) > 0.01m)
+        var totalCalculado = Math.Round(Cantidad * PrecioUnitario, 2, MidpointRounding.AwayFromZero);
+        var totalInformado = Math.Round(TotalCompra, 2, MidpointRounding.AwayFromZero);
+        if (totalInformado != totalCalculado)
         {
             results.Add(new ValidationResult("El total de la compra debe coincidir con cantidad x precio unitario.", new[] { nameof(TotalCompra) }));
         }

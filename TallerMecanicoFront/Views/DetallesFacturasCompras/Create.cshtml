@@ -33,7 +33,7 @@
                             <option value="">Seleccione un insumo</option>
                             @foreach (var insumo in insumos)
                             {
-                                <option value="@insumo.Id">@insumo.Nombre - Marca: @insumo.Marca - Stock: @insumo.Stock</option>
+                                <option value="@insumo.Id" data-precio="@insumo.PrecioCompra.ToString(System.Globalization.CultureInfo.InvariantCulture)">@insumo.Nombre - Marca: @insumo.Marca - Stock: @insumo.Stock</option>
                             }
                         </select>
                         <span asp-validation-for="IdInsumo" class="text-danger"></span>
@@ -59,7 +59,7 @@
 
                     <div class="mb-4">
                         <label asp-for="TotalCompra" class="form-label"></label>
-                        <input asp-for="TotalCompra" class="form-control" min="0" step="0.01" readonly required />
+                        <input asp-for="TotalCompra" type="number" step="0.01" class="form-control" readonly required />
                         <span asp-validation-for="TotalCompra" class="text-danger"></span>
                     </div>
 
@@ -97,18 +97,26 @@
             const cantidadInput = form.querySelector('input[name="Cantidad"]');
             const precioInput = form.querySelector('input[name="PrecioUnitario"]');
             const totalInput = form.querySelector('input[name="TotalCompra"]');
+            const insumoInput = form.querySelector('select[name="IdInsumo"]');
 
-            if (!cantidadInput || !precioInput || !totalInput) return;
+            if (!cantidadInput || !precioInput || !totalInput || !insumoInput) return;
 
             const calcularTotal = () => {
                 const cantidad = Number.parseFloat(cantidadInput.value) || 0;
                 const precio = Number.parseFloat(precioInput.value) || 0;
-                const total = cantidad * precio;
+                const total = Math.round((cantidad * precio + Number.EPSILON) * 100) / 100;
                 totalInput.value = total.toFixed(2);
             };
 
             cantidadInput.addEventListener('input', calcularTotal);
             precioInput.addEventListener('input', calcularTotal);
+            insumoInput.addEventListener('change', () => {
+                const opcion = insumoInput.options[insumoInput.selectedIndex];
+                if (opcion?.dataset.precio) {
+                    precioInput.value = opcion.dataset.precio;
+                    calcularTotal();
+                }
+            });
             calcularTotal();
         });
     </script>
