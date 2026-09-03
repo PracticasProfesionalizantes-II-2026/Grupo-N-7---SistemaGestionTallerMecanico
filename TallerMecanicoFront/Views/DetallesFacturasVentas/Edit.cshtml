@@ -5,6 +5,7 @@
     var facturas = ViewBag.FacturasVentas as IEnumerable<FacturaVenta> ?? Enumerable.Empty<FacturaVenta>();
     var trabajos = ViewBag.TrabajosPorTurno as IEnumerable<TrabajoPorTurno> ?? Enumerable.Empty<TrabajoPorTurno>();
     var insumos = ViewBag.InsumosPorTrabajo as IEnumerable<InsumoPorTrabajo> ?? Enumerable.Empty<InsumoPorTrabajo>();
+    var insumosCatalogo = ViewBag.Insumos as IEnumerable<Insumo> ?? Enumerable.Empty<Insumo>();
 }
 
 <div class="row justify-content-center">
@@ -45,7 +46,7 @@
                                 <option value="">Seleccione un insumo</option>
                                 @foreach (var insumo in insumos)
                                 {
-                                    <option value="@insumo.Id">Insumo N° @insumo.Id - TrabajoTurno @insumo.IdTrabajoTurno - Cantidad: @insumo.Cantidad</option>
+                                    <option value="@insumo.Id" data-precio="@((insumosCatalogo.FirstOrDefault(x => x.Id == insumo.IdInsumo)?.PrecioVenta ?? 0m).ToString(System.Globalization.CultureInfo.InvariantCulture))">Insumo N° @insumo.Id - TrabajoTurno @insumo.IdTrabajoTurno - Cantidad: @insumo.Cantidad</option>
                                 }
                             </select>
                             <span asp-validation-for="IdInsumoPorTrabajo" class="text-danger"></span>
@@ -97,8 +98,9 @@
             const cantidadInput = form.querySelector('input[name="Cantidad"]');
             const precioInput = form.querySelector('input[name="PrecioUnitario"]');
             const totalInput = form.querySelector('input[name="TotalDetalle"]');
+            const insumoInput = form.querySelector('select[name="IdInsumoPorTrabajo"]');
 
-            if (!cantidadInput || !precioInput || !totalInput) return;
+            if (!cantidadInput || !precioInput || !totalInput || !insumoInput) return;
 
             const calcularTotal = () => {
                 const cantidad = Number.parseFloat(cantidadInput.value) || 0;
@@ -109,6 +111,13 @@
 
             cantidadInput.addEventListener('input', calcularTotal);
             precioInput.addEventListener('input', calcularTotal);
+            insumoInput.addEventListener('change', () => {
+                const opcion = insumoInput.options[insumoInput.selectedIndex];
+                if (opcion?.dataset.precio) {
+                    precioInput.value = opcion.dataset.precio;
+                    calcularTotal();
+                }
+            });
             calcularTotal();
         });
     </script>

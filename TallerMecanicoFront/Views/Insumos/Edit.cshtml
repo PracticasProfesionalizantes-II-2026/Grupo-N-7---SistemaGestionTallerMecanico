@@ -43,7 +43,8 @@
                         </div>
                         <div class="col-md-3">
                             <label asp-for="Stock" class="form-label"></label>
-                            <input asp-for="Stock" type="number" min="0" class="form-control" required />
+                            <input asp-for="Stock" type="number" class="form-control" disabled />
+                            <input type="hidden" name="Stock" value="@Model.Stock" />
                             <span asp-validation-for="Stock" class="text-danger"></span>
                         </div>
                         <div class="col-md-3 d-flex align-items-end">

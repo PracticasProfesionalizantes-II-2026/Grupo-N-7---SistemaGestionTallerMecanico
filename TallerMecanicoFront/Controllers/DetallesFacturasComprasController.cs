@@ -41,6 +41,12 @@ public class DetallesFacturasComprasController : Controller
             return BadRequest();
         }
 
+        if (!await AsignarPrecioDelInsumoAsync(detalle))
+        {
+            await CargarOpcionesAsync();
+            return View(detalle);
+        }
+
         if (detalle.Cantidad <= 0)
         {
             ModelState.AddModelError(nameof(detalle.Cantidad), "La cantidad debe ser mayor a cero.");
@@ -51,8 +57,9 @@ public class DetallesFacturasComprasController : Controller
             ModelState.AddModelError(nameof(detalle.PrecioUnitario), "El precio unitario debe ser mayor a cero.");
         }
 
-        var totalCalculado = detalle.Cantidad * detalle.PrecioUnitario;
-        if (Math.Abs(detalle.TotalCompra - totalCalculado) > 0.01m)
+        var totalCalculado = Math.Round(detalle.Cantidad * detalle.PrecioUnitario, 2, MidpointRounding.AwayFromZero);
+        detalle.TotalCompra = Math.Round(detalle.TotalCompra, 2, MidpointRounding.AwayFromZero);
+        if (detalle.TotalCompra != totalCalculado)
         {
             ModelState.AddModelError(nameof(detalle.TotalCompra), "El total de la compra debe coincidir con cantidad x precio unitario.");
         }
@@ -113,6 +120,12 @@ public class DetallesFacturasComprasController : Controller
             return BadRequest();
         }
 
+        if (!await AsignarPrecioDelInsumoAsync(detalle))
+        {
+            await CargarOpcionesAsync();
+            return View(detalle);
+        }
+
         if (detalle.Cantidad <= 0)
         {
             ModelState.AddModelError(nameof(detalle.Cantidad), "La cantidad debe ser mayor a cero.");
@@ -123,8 +136,9 @@ public class DetallesFacturasComprasController : Controller
             ModelState.AddModelError(nameof(detalle.PrecioUnitario), "El precio unitario debe ser mayor a cero.");
         }
 
-        var totalCalculado = detalle.Cantidad * detalle.PrecioUnitario;
-        if (Math.Abs(detalle.TotalCompra - totalCalculado) > 0.01m)
+        var totalCalculado = Math.Round(detalle.Cantidad * detalle.PrecioUnitario, 2, MidpointRounding.AwayFromZero);
+        detalle.TotalCompra = Math.Round(detalle.TotalCompra, 2, MidpointRounding.AwayFromZero);
+        if (detalle.TotalCompra != totalCalculado)
         {
             ModelState.AddModelError(nameof(detalle.TotalCompra), "El total de la compra debe coincidir con cantidad x precio unitario.");
         }
@@ -180,5 +194,29 @@ public class DetallesFacturasComprasController : Controller
             ModelState.AddModelError(string.Empty, "No se pudieron cargar las facturas de compra.");
         if (!insumosResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los insumos.");
+    }
+
+    private async Task<bool> AsignarPrecioDelInsumoAsync(DetalleFacturaCompra detalle)
+    {
+        ModelState.Remove(nameof(detalle.PrecioUnitario));
+        ModelState.Remove(nameof(detalle.TotalCompra));
+
+        var response = await _httpClient.GetAsync($"api/insumos/{detalle.IdInsumo}");
+        if (!response.IsSuccessStatusCode)
+        {
+            ModelState.AddModelError(nameof(detalle.IdInsumo), "El insumo seleccionado no existe.");
+            return false;
+        }
+
+        var insumo = await response.Content.ReadFromJsonAsync<Insumo>();
+        if (insumo is null)
+        {
+            ModelState.AddModelError(nameof(detalle.IdInsumo), "No se pudo obtener el insumo seleccionado.");
+            return false;
+        }
+
+        detalle.PrecioUnitario = insumo.PrecioCompra;
+        detalle.TotalCompra = Math.Round(detalle.Cantidad * detalle.PrecioUnitario, 2, MidpointRounding.AwayFromZero);
+        return true;
     }
 }
