@@ -1,5 +1,6 @@
 @model TallerMecanicoFront.Models.TrabajoPorTurno
 @using TallerMecanicoFront.Models
+@using System.Globalization
 @{
     ViewData["Title"] = "Crear Trabajo por Turno";
     var turnos = ViewBag.Turnos as IEnumerable<Turno> ?? Enumerable.Empty<Turno>();
@@ -33,7 +34,7 @@
                                 <option value="">Seleccione un trabajo</option>
                                 @foreach (var trabajo in trabajos)
                                 {
-                                    <option value="@trabajo.Id">@trabajo.Nombre</option>
+                                    <option value="@trabajo.Id" data-precio="@trabajo.PrecioHsManoObra.ToString(CultureInfo.InvariantCulture)">@trabajo.Nombre</option>
                                 }
                             </select>
                             <span asp-validation-for="IdTrabajo" class="text-danger"></span>
@@ -56,7 +57,7 @@
                         </div>
                         <div class="col-md-3">
                             <label asp-for="TarifaHsHombre" class="form-label">Tarifa</label>
-                            <input asp-for="TarifaHsHombre" type="number" step="0.01" min="0" class="form-control" required />
+                            <input asp-for="TarifaHsHombre" type="number" step="0.01" min="0" class="form-control" readonly required />
                             <span asp-validation-for="TarifaHsHombre" class="text-danger"></span>
                         </div>
                         <div class="col-12">
@@ -77,3 +78,19 @@
 </div>
 
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }
+
+<script>
+    const trabajoSelect = document.getElementById("IdTrabajo");
+    const hsHombreInput = document.getElementById("HsHombre");
+    const tarifaInput = document.getElementById("TarifaHsHombre");
+
+    function actualizarTarifa() {
+        const precio = Number(trabajoSelect.selectedOptions[0]?.dataset.precio || 0);
+        const hsHombre = Number(hsHombreInput.value || 0);
+        tarifaInput.value = (hsHombre * precio).toFixed(2);
+    }
+
+    trabajoSelect.addEventListener("change", actualizarTarifa);
+    hsHombreInput.addEventListener("input", actualizarTarifa);
+    actualizarTarifa();
+</script>
