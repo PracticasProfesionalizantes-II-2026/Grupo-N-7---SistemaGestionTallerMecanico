@@ -13,6 +13,34 @@ public class UsuariosController : Controller
         _httpClient = httpClientFactory.CreateClient("TallerApi");
     }
 
+    [HttpGet]
+    public IActionResult Login()
+    {
+        return View(new UsuarioLoginViewModel());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Login(UsuarioLoginViewModel login)
+    {
+        if (!ModelState.IsValid)
+            return View(login);
+
+        var response = await _httpClient.PostAsJsonAsync("api/usuarios/login", new
+        {
+            login.Correo,
+            login.Contrasena
+        });
+
+        if (!response.IsSuccessStatusCode)
+        {
+            ModelState.AddModelError(string.Empty, "El correo o la contraseña son incorrectos.");
+            return View(login);
+        }
+
+        return RedirectToAction("Index", "Home");
+    }
+
     public async Task<IActionResult> Index()
     {
         var response = await _httpClient.GetAsync("api/usuarios");

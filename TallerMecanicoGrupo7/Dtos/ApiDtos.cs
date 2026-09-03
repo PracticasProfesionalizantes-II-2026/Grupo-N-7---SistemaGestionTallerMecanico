@@ -197,6 +197,16 @@ public class UsuarioWriteDto : PersonaWriteDto
     public new string ContraseñaHash { get; set; } = string.Empty;
 }
 
+public class UsuarioLoginDto
+{
+    [Required]
+    [EmailAddress]
+    public string Correo { get; set; } = string.Empty;
+
+    [Required]
+    public string Contrasena { get; set; } = string.Empty;
+}
+
 public class MaquinaReadDto
 {
     public int Id { get; set; }

@@ -18,6 +18,14 @@ public static class UsuariosEndpoint
             return usuario is not null ? Results.Ok(usuario.ToReadDto()) : Results.NotFound();
         });
 
+        app.MapPost("/api/usuarios/login", async (UsuarioLoginDto login, IUsuariosLogica logica) =>
+        {
+            var usuario = await logica.GetUsuarioByCredencialesAsync(login.Correo, login.Contrasena);
+            return usuario is not null
+                ? Results.Ok(usuario.ToReadDto())
+                : Results.Unauthorized();
+        });
+
         app.MapPost("/api/usuarios", async (UsuarioWriteDto usuario, IUsuariosLogica logica) =>
         {
             var entity = usuario.ToEntity();

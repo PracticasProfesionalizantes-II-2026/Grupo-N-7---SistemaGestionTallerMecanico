@@ -23,6 +23,16 @@ public class UsuariosRepositorio : IUsuariosRepositorio
         return await _context.Usuarios.FindAsync(id)!;
     }
 
+    public async Task<Usuario?> GetUsuarioByCredencialesAsync(string correo, string contrasena)
+    {
+        return await _context.Usuarios
+            .AsNoTracking()
+            .FirstOrDefaultAsync(usuario =>
+                usuario.Correo == correo &&
+                usuario.ContraseñaHash == contrasena &&
+                usuario.Activo);
+    }
+
     public async Task AddUsuarioAsync(Usuario usuario)
     {
         _context.Usuarios.Add(usuario);
