@@ -25,14 +25,14 @@ public class DetalleFacturasComprasRepositorio : IDetallesFacturasComprasReposit
 
     public async Task AddDetalleFacturaCompraAsync(DetalleFacturaCompra detalleFacturaCompra)
     {
-        var insumo = await _context.Insumos.FindAsync(detalleFacturaCompra.IdInsumo);
-        if (insumo is null)
-        {
-            throw new InvalidOperationException("El insumo seleccionado no existe.");
-        }
-
-        insumo.PrecioCompra = detalleFacturaCompra.PrecioUnitario;
-        insumo.Stock += detalleFacturaCompra.Cantidad;
+        var versionador = new InsumoVersionador(_context);
+        var insumo = await versionador.ObtenerVersionActivaAsync(detalleFacturaCompra.IdInsumo);
+        insumo = await versionador.ActualizarPrecioYStockAsync(
+            insumo.Id,
+            detalleFacturaCompra.PrecioUnitario,
+            insumo.PrecioVenta,
+            detalleFacturaCompra.Cantidad);
+        detalleFacturaCompra.IdInsumo = insumo.Id;
         _context.DetallesFacturasCompras.Add(detalleFacturaCompra);
         await _context.SaveChangesAsync();
     }
@@ -47,28 +47,32 @@ public class DetalleFacturasComprasRepositorio : IDetallesFacturasComprasReposit
             throw new InvalidOperationException("El detalle de factura de compra no existe.");
         }
 
-        var insumoAnterior = await _context.Insumos.FindAsync(detalleExistente.IdInsumo);
-        var insumoNuevo = await _context.Insumos.FindAsync(detalleFacturaCompra.IdInsumo);
-        if (insumoNuevo is null)
+        var versionador = new InsumoVersionador(_context);
+        var insumoAnterior = await versionador.ObtenerVersionActivaAsync(detalleExistente.IdInsumo);
+        var insumoNuevo = await versionador.ObtenerVersionActivaAsync(detalleFacturaCompra.IdInsumo);
+        if (InsumoVersionador.EsMismoProducto(insumoAnterior, insumoNuevo))
         {
-            throw new InvalidOperationException("El insumo seleccionado no existe.");
-        }
-
-        insumoNuevo.PrecioCompra = detalleFacturaCompra.PrecioUnitario;
-        if (insumoAnterior is not null && insumoAnterior.Id == insumoNuevo.Id)
-        {
-            insumoNuevo.Stock += detalleFacturaCompra.Cantidad - detalleExistente.Cantidad;
+            insumoNuevo = await versionador.ActualizarPrecioYStockAsync(
+                insumoNuevo.Id,
+                detalleFacturaCompra.PrecioUnitario,
+                insumoNuevo.PrecioVenta,
+                detalleFacturaCompra.Cantidad - detalleExistente.Cantidad);
         }
         else
         {
-            if (insumoAnterior is not null)
-            {
-                insumoAnterior.Stock -= detalleExistente.Cantidad;
-            }
-
-            insumoNuevo.Stock += detalleFacturaCompra.Cantidad;
+            insumoAnterior = await versionador.ActualizarPrecioYStockAsync(
+                insumoAnterior.Id,
+                insumoAnterior.PrecioCompra,
+                insumoAnterior.PrecioVenta,
+                -detalleExistente.Cantidad);
+            insumoNuevo = await versionador.ActualizarPrecioYStockAsync(
+                insumoNuevo.Id,
+                detalleFacturaCompra.PrecioUnitario,
+                insumoNuevo.PrecioVenta,
+                detalleFacturaCompra.Cantidad);
         }
 
+        detalleFacturaCompra.IdInsumo = insumoNuevo.Id;
         _context.DetallesFacturasCompras.Update(detalleFacturaCompra);
         await _context.SaveChangesAsync();
     }
@@ -78,11 +82,13 @@ public class DetalleFacturasComprasRepositorio : IDetallesFacturasComprasReposit
         var detalleFacturaCompra = await _context.DetallesFacturasCompras.FindAsync(id);
         if (detalleFacturaCompra != null)
         {
-            var insumo = await _context.Insumos.FindAsync(detalleFacturaCompra.IdInsumo);
-            if (insumo is not null)
-            {
-                insumo.Stock -= detalleFacturaCompra.Cantidad;
-            }
+            var versionador = new InsumoVersionador(_context);
+            var insumo = await versionador.ObtenerVersionActivaAsync(detalleFacturaCompra.IdInsumo);
+            await versionador.ActualizarPrecioYStockAsync(
+                insumo.Id,
+                insumo.PrecioCompra,
+                insumo.PrecioVenta,
+                -detalleFacturaCompra.Cantidad);
 
             _context.DetallesFacturasCompras.Remove(detalleFacturaCompra);
             await _context.SaveChangesAsync();
