@@ -25,11 +25,14 @@ public class DetallesFacturasVentasRepositorio : IDetallesFacturasVentasReposito
 
     public async Task AddDetalleFacturaVentaAsync(DetalleFacturaVenta detalleFacturaVenta)
     {
-        var insumo = await ObtenerInsumoAsync(detalleFacturaVenta.IdInsumoPorTrabajo);
+        var versionador = new InsumoVersionador(_context);
+        var insumo = await ObtenerInsumoAsync(detalleFacturaVenta.IdInsumoPorTrabajo, versionador);
         if (insumo is not null)
         {
-            insumo.PrecioVenta = detalleFacturaVenta.PrecioUnitario;
-            insumo.Stock -= ObtenerCantidadEntera(detalleFacturaVenta.Cantidad);
+            insumo = await versionador.ActualizarPrecioVentaYStockAsync(
+                insumo.Id,
+                detalleFacturaVenta.PrecioUnitario,
+                -ObtenerCantidadEntera(detalleFacturaVenta.Cantidad));
             ValidarStock(insumo);
         }
 
@@ -47,33 +50,39 @@ public class DetallesFacturasVentasRepositorio : IDetallesFacturasVentasReposito
             throw new InvalidOperationException("El detalle de factura de venta no existe.");
         }
 
-        var insumoAnterior = await ObtenerInsumoAsync(detalleExistente.IdInsumoPorTrabajo);
-        var insumoNuevo = await ObtenerInsumoAsync(detalleFacturaVenta.IdInsumoPorTrabajo);
+        var versionador = new InsumoVersionador(_context);
+        var insumoAnterior = await ObtenerInsumoAsync(detalleExistente.IdInsumoPorTrabajo, versionador);
+        var insumoNuevo = await ObtenerInsumoAsync(detalleFacturaVenta.IdInsumoPorTrabajo, versionador);
 
-        if (insumoAnterior is not null && insumoAnterior.Id == insumoNuevo?.Id)
+        if (insumoAnterior is not null && insumoNuevo is not null
+            && InsumoVersionador.EsMismoProducto(insumoAnterior, insumoNuevo))
         {
-            insumoNuevo.Stock += ObtenerCantidadEntera(detalleExistente.Cantidad)
-                - ObtenerCantidadEntera(detalleFacturaVenta.Cantidad);
+            insumoNuevo = await versionador.ActualizarPrecioVentaYStockAsync(
+                insumoNuevo.Id,
+                detalleFacturaVenta.PrecioUnitario,
+                ObtenerCantidadEntera(detalleExistente.Cantidad)
+                    - ObtenerCantidadEntera(detalleFacturaVenta.Cantidad));
             ValidarStock(insumoNuevo);
         }
         else
         {
             if (insumoAnterior is not null)
             {
-                insumoAnterior.Stock += ObtenerCantidadEntera(detalleExistente.Cantidad);
+                insumoAnterior = await versionador.ActualizarPrecioYStockAsync(
+                    insumoAnterior.Id,
+                    insumoAnterior.PrecioCompra,
+                    insumoAnterior.PrecioVenta,
+                    ObtenerCantidadEntera(detalleExistente.Cantidad));
             }
 
             if (insumoNuevo is not null)
             {
-                insumoNuevo.PrecioVenta = detalleFacturaVenta.PrecioUnitario;
-                insumoNuevo.Stock -= ObtenerCantidadEntera(detalleFacturaVenta.Cantidad);
+                insumoNuevo = await versionador.ActualizarPrecioVentaYStockAsync(
+                    insumoNuevo.Id,
+                    detalleFacturaVenta.PrecioUnitario,
+                    -ObtenerCantidadEntera(detalleFacturaVenta.Cantidad));
                 ValidarStock(insumoNuevo);
             }
-        }
-
-        if (insumoAnterior is not null && insumoAnterior.Id == insumoNuevo?.Id)
-        {
-            insumoNuevo!.PrecioVenta = detalleFacturaVenta.PrecioUnitario;
         }
 
         _context.DetallesFacturasVentas.Update(detalleFacturaVenta);
@@ -85,10 +94,15 @@ public class DetallesFacturasVentasRepositorio : IDetallesFacturasVentasReposito
         var detalleFacturaVenta = await _context.DetallesFacturasVentas.FindAsync(id);
         if (detalleFacturaVenta != null)
         {
-            var insumo = await ObtenerInsumoAsync(detalleFacturaVenta.IdInsumoPorTrabajo);
+            var versionador = new InsumoVersionador(_context);
+            var insumo = await ObtenerInsumoAsync(detalleFacturaVenta.IdInsumoPorTrabajo, versionador);
             if (insumo is not null)
             {
-                insumo.Stock += ObtenerCantidadEntera(detalleFacturaVenta.Cantidad);
+                await versionador.ActualizarPrecioYStockAsync(
+                    insumo.Id,
+                    insumo.PrecioCompra,
+                    insumo.PrecioVenta,
+                    ObtenerCantidadEntera(detalleFacturaVenta.Cantidad));
             }
 
             _context.DetallesFacturasVentas.Remove(detalleFacturaVenta);
@@ -96,7 +110,7 @@ public class DetallesFacturasVentasRepositorio : IDetallesFacturasVentasReposito
         }
     }
 
-    private async Task<Insumo?> ObtenerInsumoAsync(int? idInsumoPorTrabajo)
+    private async Task<Insumo?> ObtenerInsumoAsync(int? idInsumoPorTrabajo, InsumoVersionador versionador)
     {
         if (!idInsumoPorTrabajo.HasValue)
         {
@@ -109,24 +123,7 @@ public class DetallesFacturasVentasRepositorio : IDetallesFacturasVentasReposito
             throw new InvalidOperationException("El insumo por trabajo seleccionado no existe.");
         }
 
-        var insumo = await _context.Insumos.FindAsync(insumoPorTrabajo.IdInsumo);
-        if (insumo is null)
-        {
-            throw new InvalidOperationException("El insumo seleccionado no existe.");
-        }
-
-        if (insumo.Activo)
-        {
-            return insumo;
-        }
-
-        return await _context.Insumos
-            .Where(x => x.Activo
-                && x.Nombre == insumo.Nombre
-                && x.Marca == insumo.Marca
-                && x.IdProveedor == insumo.IdProveedor)
-            .OrderByDescending(x => x.Id)
-            .FirstOrDefaultAsync() ?? insumo;
+        return await versionador.ObtenerVersionActivaAsync(insumoPorTrabajo.IdInsumo);
     }
 
     private static int ObtenerCantidadEntera(decimal cantidad)

@@ -103,8 +103,8 @@
             if (!cantidadInput || !precioInput || !totalInput || !insumoInput) return;
 
             const calcularTotal = () => {
-                const cantidad = Number.parseFloat(cantidadInput.value) || 0;
-                const precio = Number.parseFloat(precioInput.value) || 0;
+                const cantidad = Number.parseFloat(cantidadInput.value.replace(',', '.')) || 0;
+                const precio = Number.parseFloat(precioInput.value.replace(',', '.')) || 0;
                 const total = cantidad * precio;
                 totalInput.value = total.toFixed(2);
             };

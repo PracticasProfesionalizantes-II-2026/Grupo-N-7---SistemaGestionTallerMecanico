@@ -53,7 +53,7 @@
 
                     <div class="mb-3">
                         <label asp-for="PrecioUnitario" class="form-label"></label>
-                        <input id="PrecioUnitario" name="PrecioUnitario" value="@Model.PrecioUnitario.ToString(System.Globalization.CultureInfo.InvariantCulture)" class="form-control" min="0" step="0.01" required />
+                        <input id="PrecioUnitario" name="PrecioUnitario" value="@Model.PrecioUnitario.ToString(System.Globalization.CultureInfo.InvariantCulture)" type="number" class="form-control" min="0" step="0.01" required />
                         <span asp-validation-for="PrecioUnitario" class="text-danger"></span>
                     </div>
 
@@ -102,8 +102,8 @@
             if (!cantidadInput || !precioInput || !totalInput || !insumoInput) return;
 
             const calcularTotal = () => {
-                const cantidad = Number.parseFloat(cantidadInput.value) || 0;
-                const precio = Number.parseFloat(precioInput.value) || 0;
+                const cantidad = Number.parseFloat(cantidadInput.value.replace(',', '.')) || 0;
+                const precio = Number.parseFloat(precioInput.value.replace(',', '.')) || 0;
                 const total = Math.round((cantidad * precio + Number.EPSILON) * 100) / 100;
                 totalInput.value = total.toFixed(2);
             };

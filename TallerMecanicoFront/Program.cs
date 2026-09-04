@@ -1,7 +1,12 @@
+using TallerMecanicoFront.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.ModelBinderProviders.Insert(0, new FlexibleDecimalModelBinderProvider());
+});
 builder.Services.AddHttpClient("TallerApi", client =>
 {
     var baseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5237/";
