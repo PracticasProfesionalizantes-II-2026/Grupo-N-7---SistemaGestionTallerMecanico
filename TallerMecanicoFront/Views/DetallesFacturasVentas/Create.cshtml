@@ -5,7 +5,7 @@
     var facturas = ViewBag.FacturasVentas as IEnumerable<FacturaVenta> ?? Enumerable.Empty<FacturaVenta>();
     var trabajos = ViewBag.TrabajosPorTurno as IEnumerable<TrabajoPorTurno> ?? Enumerable.Empty<TrabajoPorTurno>();
     var insumos = ViewBag.InsumosPorTrabajo as IEnumerable<InsumoPorTrabajo> ?? Enumerable.Empty<InsumoPorTrabajo>();
-    var insumosCatalogo = ViewBag.Insumos as IEnumerable<Insumo> ?? Enumerable.Empty<Insumo>();
+    var preciosVenta = ViewBag.PreciosVenta as Dictionary<int, decimal> ?? new Dictionary<int, decimal>();
 }
 
 <div class="row justify-content-center">
@@ -45,14 +45,14 @@
                                 <option value="">Seleccione un insumo</option>
                                 @foreach (var insumo in insumos)
                                 {
-                                    <option value="@insumo.Id" data-precio="@((insumosCatalogo.FirstOrDefault(x => x.Id == insumo.IdInsumo)?.PrecioVenta ?? 0m).ToString(System.Globalization.CultureInfo.InvariantCulture))">Insumo N° @insumo.Id - TrabajoTurno @insumo.IdTrabajoTurno - Cantidad: @insumo.Cantidad</option>
+                                    <option value="@insumo.Id" data-precio="@((preciosVenta.TryGetValue(insumo.Id, out var precioVenta) ? precioVenta : 0m).ToString(System.Globalization.CultureInfo.InvariantCulture))">Insumo N° @insumo.Id - TrabajoTurno @insumo.IdTrabajoTurno - Cantidad: @insumo.Cantidad</option>
                                 }
                             </select>
                             <span asp-validation-for="IdInsumoPorTrabajo" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">
                             <label asp-for="Cantidad" class="form-label"></label>
-                            <input asp-for="Cantidad" type="number" step="0.01" min="0.01" class="form-control" required />
+                            <input id="Cantidad" name="Cantidad" value="@Model.Cantidad.ToString(System.Globalization.CultureInfo.InvariantCulture)" type="number" step="0.01" min="0.01" class="form-control" required />
                             <span asp-validation-for="Cantidad" class="text-danger"></span>
                         </div>
                         <div class="col-12">
@@ -62,17 +62,17 @@
                         </div>
                         <div class="col-md-4">
                             <label asp-for="PrecioUnitario" class="form-label"></label>
-                            <input asp-for="PrecioUnitario" type="number" step="0.01" min="0" class="form-control" required />
+                            <input id="PrecioUnitario" name="PrecioUnitario" value="@Model.PrecioUnitario.ToString(System.Globalization.CultureInfo.InvariantCulture)" type="number" step="0.01" min="0" class="form-control" required />
                             <span asp-validation-for="PrecioUnitario" class="text-danger"></span>
                         </div>
                         <div class="col-md-4">
                             <label asp-for="TotalDetalle" class="form-label"></label>
-                            <input asp-for="TotalDetalle" type="number" step="0.01" min="0" class="form-control" readonly required />
+                            <input id="TotalDetalle" name="TotalDetalle" value="@Model.TotalDetalle.ToString(System.Globalization.CultureInfo.InvariantCulture)" type="number" step="0.01" min="0" class="form-control" readonly required />
                             <span asp-validation-for="TotalDetalle" class="text-danger"></span>
                         </div>
                         <div class="col-md-4">
                             <label asp-for="CostoUnitarioInsumoHistorico" class="form-label"></label>
-                            <input asp-for="CostoUnitarioInsumoHistorico" type="number" step="0.01" min="0" class="form-control" required />
+                            <input id="CostoUnitarioInsumoHistorico" name="CostoUnitarioInsumoHistorico" value="@Model.CostoUnitarioInsumoHistorico.ToString(System.Globalization.CultureInfo.InvariantCulture)" type="number" step="0.01" min="0" class="form-control" required />
                             <span asp-validation-for="CostoUnitarioInsumoHistorico" class="text-danger"></span>
                         </div>
                     </div>

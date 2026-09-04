@@ -31,6 +31,7 @@ public class DetalleFacturasComprasRepositorio : IDetallesFacturasComprasReposit
             throw new InvalidOperationException("El insumo seleccionado no existe.");
         }
 
+        insumo.PrecioCompra = detalleFacturaCompra.PrecioUnitario;
         insumo.Stock += detalleFacturaCompra.Cantidad;
         _context.DetallesFacturasCompras.Add(detalleFacturaCompra);
         await _context.SaveChangesAsync();
@@ -53,6 +54,7 @@ public class DetalleFacturasComprasRepositorio : IDetallesFacturasComprasReposit
             throw new InvalidOperationException("El insumo seleccionado no existe.");
         }
 
+        insumoNuevo.PrecioCompra = detalleFacturaCompra.PrecioUnitario;
         if (insumoAnterior is not null && insumoAnterior.Id == insumoNuevo.Id)
         {
             insumoNuevo.Stock += detalleFacturaCompra.Cantidad - detalleExistente.Cantidad;

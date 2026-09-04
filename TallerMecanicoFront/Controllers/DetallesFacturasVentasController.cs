@@ -41,6 +41,9 @@ public class DetallesFacturasVentasController : Controller
             return BadRequest();
         }
 
+        ModelState.Remove(nameof(detalle.TotalDetalle));
+        detalle.TotalDetalle = Math.Round(detalle.Cantidad * detalle.PrecioUnitario, 2, MidpointRounding.AwayFromZero);
+
         if (detalle.Cantidad <= 0)
         {
             ModelState.AddModelError(nameof(detalle.Cantidad), "La cantidad debe ser mayor a cero.");
@@ -54,12 +57,6 @@ public class DetallesFacturasVentasController : Controller
         if (detalle.IdTrabajoPorTurno is null && detalle.IdInsumoPorTrabajo is null)
         {
             ModelState.AddModelError(nameof(detalle.IdTrabajoPorTurno), "Debe seleccionar al menos un trabajo o un insumo para el detalle.");
-        }
-
-        var totalCalculado = detalle.Cantidad * detalle.PrecioUnitario;
-        if (Math.Abs(detalle.TotalDetalle - totalCalculado) > 0.01m)
-        {
-            ModelState.AddModelError(nameof(detalle.TotalDetalle), "El total del detalle debe coincidir con cantidad x precio unitario.");
         }
 
         if (!ModelState.IsValid)
@@ -107,6 +104,9 @@ public class DetallesFacturasVentasController : Controller
             return BadRequest();
         }
 
+        ModelState.Remove(nameof(detalle.TotalDetalle));
+        detalle.TotalDetalle = Math.Round(detalle.Cantidad * detalle.PrecioUnitario, 2, MidpointRounding.AwayFromZero);
+
         if (detalle.Cantidad <= 0)
         {
             ModelState.AddModelError(nameof(detalle.Cantidad), "La cantidad debe ser mayor a cero.");
@@ -120,12 +120,6 @@ public class DetallesFacturasVentasController : Controller
         if (detalle.IdTrabajoPorTurno is null && detalle.IdInsumoPorTrabajo is null)
         {
             ModelState.AddModelError(nameof(detalle.IdTrabajoPorTurno), "Debe seleccionar al menos un trabajo o un insumo para el detalle.");
-        }
-
-        var totalCalculado = detalle.Cantidad * detalle.PrecioUnitario;
-        if (Math.Abs(detalle.TotalDetalle - totalCalculado) > 0.01m)
-        {
-            ModelState.AddModelError(nameof(detalle.TotalDetalle), "El total del detalle debe coincidir con cantidad x precio unitario.");
         }
 
         if (!ModelState.IsValid)
@@ -172,14 +166,35 @@ public class DetallesFacturasVentasController : Controller
             : new List<TrabajoPorTurno>();
 
         var insumosResponse = await _httpClient.GetAsync("api/insumos-por-trabajo");
-        ViewBag.InsumosPorTrabajo = insumosResponse.IsSuccessStatusCode
+        var insumosPorTrabajo = insumosResponse.IsSuccessStatusCode
             ? await insumosResponse.Content.ReadFromJsonAsync<List<InsumoPorTrabajo>>() ?? new List<InsumoPorTrabajo>()
             : new List<InsumoPorTrabajo>();
+        ViewBag.InsumosPorTrabajo = insumosPorTrabajo;
 
         var insumosCatalogoResponse = await _httpClient.GetAsync("api/insumos");
-        ViewBag.Insumos = insumosCatalogoResponse.IsSuccessStatusCode
+        var insumosCatalogo = insumosCatalogoResponse.IsSuccessStatusCode
             ? await insumosCatalogoResponse.Content.ReadFromJsonAsync<List<Insumo>>() ?? new List<Insumo>()
             : new List<Insumo>();
+        ViewBag.Insumos = insumosCatalogo;
+
+        var preciosVenta = insumosPorTrabajo.ToDictionary(
+            insumoPorTrabajo => insumoPorTrabajo.Id,
+            insumoPorTrabajo =>
+            {
+                var insumoAnterior = insumosCatalogo.FirstOrDefault(x => x.Id == insumoPorTrabajo.IdInsumo);
+                var insumoActivo = insumoAnterior is null
+                    ? null
+                    : insumosCatalogo
+                        .Where(x => x.Activo
+                            && x.Nombre == insumoAnterior.Nombre
+                            && x.Marca == insumoAnterior.Marca
+                            && x.IdProveedor == insumoAnterior.IdProveedor)
+                        .OrderByDescending(x => x.Id)
+                        .FirstOrDefault();
+
+                return insumoActivo?.PrecioVenta ?? insumoAnterior?.PrecioVenta ?? 0m;
+            });
+        ViewBag.PreciosVenta = preciosVenta;
 
         if (!facturasResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar las facturas de venta.");

@@ -28,6 +28,7 @@ public class DetallesFacturasVentasRepositorio : IDetallesFacturasVentasReposito
         var insumo = await ObtenerInsumoAsync(detalleFacturaVenta.IdInsumoPorTrabajo);
         if (insumo is not null)
         {
+            insumo.PrecioVenta = detalleFacturaVenta.PrecioUnitario;
             insumo.Stock -= ObtenerCantidadEntera(detalleFacturaVenta.Cantidad);
             ValidarStock(insumo);
         }
@@ -64,9 +65,15 @@ public class DetallesFacturasVentasRepositorio : IDetallesFacturasVentasReposito
 
             if (insumoNuevo is not null)
             {
+                insumoNuevo.PrecioVenta = detalleFacturaVenta.PrecioUnitario;
                 insumoNuevo.Stock -= ObtenerCantidadEntera(detalleFacturaVenta.Cantidad);
                 ValidarStock(insumoNuevo);
             }
+        }
+
+        if (insumoAnterior is not null && insumoAnterior.Id == insumoNuevo?.Id)
+        {
+            insumoNuevo!.PrecioVenta = detalleFacturaVenta.PrecioUnitario;
         }
 
         _context.DetallesFacturasVentas.Update(detalleFacturaVenta);
@@ -108,7 +115,18 @@ public class DetallesFacturasVentasRepositorio : IDetallesFacturasVentasReposito
             throw new InvalidOperationException("El insumo seleccionado no existe.");
         }
 
-        return insumo;
+        if (insumo.Activo)
+        {
+            return insumo;
+        }
+
+        return await _context.Insumos
+            .Where(x => x.Activo
+                && x.Nombre == insumo.Nombre
+                && x.Marca == insumo.Marca
+                && x.IdProveedor == insumo.IdProveedor)
+            .OrderByDescending(x => x.Id)
+            .FirstOrDefaultAsync() ?? insumo;
     }
 
     private static int ObtenerCantidadEntera(decimal cantidad)
