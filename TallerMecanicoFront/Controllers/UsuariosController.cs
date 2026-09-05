@@ -1,4 +1,8 @@
 using System.Net.Http.Json;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TallerMecanicoFront.Models;
 
@@ -14,15 +18,24 @@ public class UsuariosController : Controller
     }
 
     [HttpGet]
-    public IActionResult Login()
+    [AllowAnonymous]
+    public IActionResult Login(string? returnUrl = null)
     {
+        // Si ya hay una sesión activa, no tiene sentido mostrar el login de nuevo.
+        if (User.Identity?.IsAuthenticated == true)
+            return RedirectToAction("Index", "Home");
+
+        ViewData["ReturnUrl"] = returnUrl;
         return View(new UsuarioLoginViewModel());
     }
 
     [HttpPost]
+    [AllowAnonymous]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Login(UsuarioLoginViewModel login)
+    public async Task<IActionResult> Login(UsuarioLoginViewModel login, string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = returnUrl;
+
         if (!ModelState.IsValid)
             return View(login);
 
@@ -38,7 +51,89 @@ public class UsuariosController : Controller
             return View(login);
         }
 
+        var usuario = await response.Content.ReadFromJsonAsync<Usuario>();
+        if (usuario is null)
+        {
+            ModelState.AddModelError(string.Empty, "No se pudo validar el usuario. Intenta nuevamente.");
+            return View(login);
+        }
+
+        // La API ya validó las credenciales; acá solo emitimos la identidad
+        // de sesión (cookie) para que el resto del sitio sepa quién entró
+        // y qué rol tiene, sin volver a pedir la contraseña en cada request.
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+            new(ClaimTypes.Name, $"{usuario.Nombre} {usuario.Apellido}".Trim()),
+            new(ClaimTypes.Email, usuario.Correo),
+            new(ClaimTypes.Role, usuario.IdRol.ToString())
+        };
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            principal,
+            new AuthenticationProperties
+            {
+                IsPersistent = false, // no sobrevive al cierre del navegador
+                AllowRefresh = true
+            });
+
+        if (Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
+
         return RedirectToAction("Index", "Home");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return RedirectToAction(nameof(Login));
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult RecoverPassword()
+    {
+        return View(new RecuperarPasswordViewModel());
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RecoverPassword(RecuperarPasswordViewModel modelo)
+    {
+        if (!ModelState.IsValid)
+            return View(modelo);
+
+        // La API no expone un endpoint dedicado de recuperación, así que
+        // buscamos al usuario por correo entre los existentes y actualizamos
+        // su contraseña con el PUT ya disponible.
+        var listado = await _httpClient.GetFromJsonAsync<List<Usuario>>("api/usuarios") ?? new List<Usuario>();
+        var usuario = listado.FirstOrDefault(u =>
+            string.Equals(u.Correo, modelo.Correo, StringComparison.OrdinalIgnoreCase));
+
+        if (usuario is null)
+        {
+            ModelState.AddModelError(string.Empty, "No existe un usuario registrado con ese correo.");
+            return View(modelo);
+        }
+
+        usuario.ContraseñaHash = modelo.NuevaContraseña;
+        var response = await _httpClient.PutAsJsonAsync($"api/usuarios/{usuario.Id}", CrearPayload(usuario, usuario.Id));
+
+        if (!response.IsSuccessStatusCode)
+        {
+            ModelState.AddModelError(string.Empty, "No se pudo actualizar la contraseña. Intenta nuevamente.");
+            return View(modelo);
+        }
+
+        TempData["Mensaje"] = "Contraseña actualizada. Ya podés iniciar sesión.";
+        return RedirectToAction(nameof(Login));
     }
 
     public async Task<IActionResult> Index()
