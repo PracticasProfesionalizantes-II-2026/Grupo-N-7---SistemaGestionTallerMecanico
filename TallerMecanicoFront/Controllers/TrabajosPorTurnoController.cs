@@ -26,16 +26,33 @@ public class TrabajosPorTurnoController : Controller
         return View(trabajos);
     }
 
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(int? turnoId)
     {
+        if (!turnoId.HasValue || turnoId.Value <= 0)
+        {
+            return RedirectToAction("Index", "Turnos");
+        }
+
+        if (await TurnoEstaCerradoAsync(turnoId.Value))
+        {
+            TempData["Error"] = "No se pueden agregar trabajos a un turno cerrado.";
+            return RedirectToAction("Index", "Turnos");
+        }
+
         await CargarOpcionesAsync();
-        return View(new TrabajoPorTurno());
+        return View(new TrabajoPorTurno { IdTurno = turnoId.Value });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(TrabajoPorTurno trabajoPorTurno)
     {
+        if (await TurnoEstaCerradoAsync(trabajoPorTurno.IdTurno))
+        {
+            TempData["Error"] = "No se pueden agregar trabajos a un turno cerrado.";
+            return RedirectToAction("Index", "Turnos");
+        }
+
         if (!ModelState.IsValid)
         {
             await CargarOpcionesAsync();
@@ -51,7 +68,7 @@ public class TrabajosPorTurnoController : Controller
             return View(trabajoPorTurno);
         }
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction("Index", "Turnos");
     }
 
     public async Task<IActionResult> Edit(int id)
@@ -68,6 +85,12 @@ public class TrabajosPorTurnoController : Controller
             return NotFound();
         }
 
+        if (await TurnoEstaCerradoAsync(trabajoPorTurno.IdTurno))
+        {
+            TempData["Error"] = "No se pueden editar trabajos de un turno cerrado.";
+            return RedirectToAction(nameof(Index));
+        }
+
         await CargarOpcionesAsync();
         return View(trabajoPorTurno);
     }
@@ -79,6 +102,22 @@ public class TrabajosPorTurnoController : Controller
         if (id != trabajoPorTurno.Id)
         {
             return BadRequest();
+        }
+
+        var trabajoOriginalResponse = await _httpClient.GetAsync($"api/trabajos-por-turno/{id}");
+        var trabajoOriginal = trabajoOriginalResponse.IsSuccessStatusCode
+            ? await trabajoOriginalResponse.Content.ReadFromJsonAsync<TrabajoPorTurno>()
+            : null;
+        if (trabajoOriginal is null)
+        {
+            return NotFound();
+        }
+        trabajoPorTurno.IdTurno = trabajoOriginal.IdTurno;
+
+        if (await TurnoEstaCerradoAsync(trabajoOriginal.IdTurno))
+        {
+            TempData["Error"] = "No se pueden editar trabajos de un turno cerrado.";
+            return RedirectToAction(nameof(Index));
         }
 
         if (!ModelState.IsValid)
@@ -129,7 +168,23 @@ public class TrabajosPorTurnoController : Controller
         var usuarios = usuariosResponse.IsSuccessStatusCode
             ? await usuariosResponse.Content.ReadFromJsonAsync<List<Usuario>>() ?? new List<Usuario>()
             : new List<Usuario>();
-        ViewBag.Usuarios = usuarios.Where(x => x.Activo).ToList();
+
+        var rolesResponse = await _httpClient.GetAsync("api/roles");
+        var roles = rolesResponse.IsSuccessStatusCode
+            ? await rolesResponse.Content.ReadFromJsonAsync<List<Rol>>() ?? new List<Rol>()
+            : new List<Rol>();
+
+        // Solo se puede asignar mano de obra a usuarios con rol de mecánico
+        // (mismo criterio que valida el back en TrabajosPorTurnoRepositorio).
+        var idsRolesMecanico = roles
+            .Where(r => (r.Nombre ?? string.Empty).ToLowerInvariant().Contains("mecanic")
+                || (r.Nombre ?? string.Empty).ToLowerInvariant().Contains("mecánic"))
+            .Select(r => r.Id)
+            .ToHashSet();
+
+        ViewBag.Usuarios = usuarios
+            .Where(x => x.Activo && idsRolesMecanico.Contains(x.IdRol))
+            .ToList();
 
         if (!turnosResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los turnos.");
@@ -137,5 +192,27 @@ public class TrabajosPorTurnoController : Controller
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los trabajos.");
         if (!usuariosResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los usuarios.");
+    }
+
+    private async Task<bool> TurnoEstaCerradoAsync(int turnoId)
+    {
+        var turnoResponse = await _httpClient.GetAsync($"api/turnos/{turnoId}");
+        if (!turnoResponse.IsSuccessStatusCode)
+        {
+            return false;
+        }
+
+        var turno = await turnoResponse.Content.ReadFromJsonAsync<Turno>();
+        if (turno?.IdEstado is null)
+        {
+            return false;
+        }
+
+        var estadosResponse = await _httpClient.GetAsync("api/estados-turno");
+        var estados = estadosResponse.IsSuccessStatusCode
+            ? await estadosResponse.Content.ReadFromJsonAsync<List<EstadoTurno>>() ?? new List<EstadoTurno>()
+            : new List<EstadoTurno>();
+        var estado = estados.FirstOrDefault(x => x.Id == turno.IdEstado.Value);
+        return string.Equals(estado?.Nombre?.Trim(), "Cerrado", StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -20,6 +20,10 @@ public static class PersonasEndpoint
 
         app.MapPost("/api/personas", async (PersonaWriteDto persona, IPersonasLogica logica) =>
         {
+            var errorValidacion = persona.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = persona.ToEntity();
             if (entity is null)
                 return Results.BadRequest();
@@ -30,6 +34,10 @@ public static class PersonasEndpoint
 
         app.MapPut("/api/personas/{id}", async (int id, PersonaWriteDto persona, IPersonasLogica logica) =>
         {
+            var errorValidacion = persona.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != persona.Id)
                 return Results.BadRequest();
 

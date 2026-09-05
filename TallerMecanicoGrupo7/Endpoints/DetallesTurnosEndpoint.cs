@@ -20,6 +20,10 @@ public static class DetallesTurnosEndpoint
 
         app.MapPost("/api/detalles-turnos", async (DetalleTurnoWriteDto detalleTurno, IDetallesTurnosLogica logica) =>
         {
+            var errorValidacion = detalleTurno.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = detalleTurno.ToEntity();
             await logica.AddDetalleTurnoAsync(entity);
             return Results.Created($"/api/detalles-turnos/{entity.Id}", entity.ToReadDto());
@@ -27,6 +31,10 @@ public static class DetallesTurnosEndpoint
 
         app.MapPut("/api/detalles-turnos/{id}", async (int id, DetalleTurnoWriteDto detalleTurno, IDetallesTurnosLogica logica) =>
         {
+            var errorValidacion = detalleTurno.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != detalleTurno.Id)
                 return Results.BadRequest();
 

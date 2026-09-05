@@ -20,6 +20,10 @@ public static class LocalidadesEndpoint
 
         app.MapPost("/api/localidades", async (LocalidadWriteDto localidad, ILocalidadesLogica logica) =>
         {
+            var errorValidacion = localidad.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = localidad.ToEntity();
             await logica.AddLocalidadAsync(entity);
             return Results.Created($"/api/localidades/{entity.Id}", entity.ToReadDto());
@@ -27,6 +31,10 @@ public static class LocalidadesEndpoint
 
         app.MapPut("/api/localidades/{id}", async (int id, LocalidadWriteDto localidad, ILocalidadesLogica logica) =>
         {
+            var errorValidacion = localidad.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != localidad.Id)
                 return Results.BadRequest();
 

@@ -19,7 +19,8 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label asp-for="IdTurno" class="form-label">Turno</label>
-                            <select asp-for="IdTurno" class="form-select" required>
+                            <input asp-for="IdTurno" type="hidden" />
+                            <select asp-for="IdTurno" class="form-select" disabled>
                                 <option value="">Seleccione un turno</option>
                                 @foreach (var turno in turnos)
                                 {

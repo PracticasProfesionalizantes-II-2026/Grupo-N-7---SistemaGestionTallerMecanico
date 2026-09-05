@@ -37,6 +37,77 @@ namespace ClasesTallerMecanico.Datos
         {
             base.OnModelCreating(modelBuilder);
 
+            // ---- Relaciones que quedaban en Cascade por convención de EF Core ----
+            // (toda FK requerida sin OnDelete explícito cae en Cascade por defecto).
+            // Se fuerzan a Restrict porque son tablas de "catálogo" o "cabecera":
+            // borrarlas jamás debería arrastrar en cadena usuarios, personas,
+            // insumos o facturas ya emitidas. Con Restrict, si el registro está
+            // en uso, el borrado se rechaza con un error claro en vez de
+            // desaparecer datos en silencio.
+
+            // Usuario -> Rol: borrar un Rol no debe borrar los Usuarios que lo tienen asignado.
+            modelBuilder.Entity<Usuario>()
+                .HasOne(u => u.Rol)
+                .WithMany(r => r.Usuarios)
+                .HasForeignKey(u => u.IdRol)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Persona -> Localidad: borrar una Localidad no debe borrar clientes/proveedores/usuarios que viven ahí.
+            modelBuilder.Entity<Persona>()
+                .HasOne(p => p.Localidad)
+                .WithMany(l => l.Personas)
+                .HasForeignKey(p => p.IdLocalidad)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Insumo -> Proveedor: borrar un Proveedor no debe borrar su catálogo de Insumos.
+            modelBuilder.Entity<Insumo>()
+                .HasOne(i => i.Proveedor)
+                .WithMany(p => p.Insumos)
+                .HasForeignKey(i => i.IdProveedor)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Maquina -> Cliente: borrar un Cliente no debe borrar sus Maquinas registradas.
+            modelBuilder.Entity<Maquina>()
+                .HasOne(m => m.Cliente)
+                .WithMany(c => c.Maquinas)
+                .HasForeignKey(m => m.IdCliente)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Turno -> Cliente: borrar un Cliente no debe borrar sus Turnos.
+            modelBuilder.Entity<Turno>()
+                .HasOne(t => t.Cliente)
+                .WithMany(c => c.Turnos)
+                .HasForeignKey(t => t.IdCliente)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // FacturaCompra -> Proveedor: borrar un Proveedor no debe borrar su historial de compras.
+            modelBuilder.Entity<FacturaCompra>()
+                .HasOne(f => f.Proveedor)
+                .WithMany(p => p.FacturasCompra)
+                .HasForeignKey(f => f.IdProveedor)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // FacturaCompra -> FormaPago: borrar una FormaPago no debe borrar facturas de compra.
+            modelBuilder.Entity<FacturaCompra>()
+                .HasOne(f => f.FormaPago)
+                .WithMany()
+                .HasForeignKey(f => f.IdFormaPago)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // FacturaVenta -> FormaPago: borrar una FormaPago no debe borrar facturas de venta.
+            modelBuilder.Entity<FacturaVenta>()
+                .HasOne(f => f.FormaPago)
+                .WithMany()
+                .HasForeignKey(f => f.IdFormaPago)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // SesionCaja -> Usuario: borrar un Usuario no debe borrar sus sesiones de caja históricas.
+            modelBuilder.Entity<SesionCaja>()
+                .HasOne(s => s.Usuario)
+                .WithMany(u => u.SesionesCaja)
+                .HasForeignKey(s => s.IdUsuario)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Turno -> Maquina
             modelBuilder.Entity<Turno>()
                 .HasOne(t => t.Maquina)

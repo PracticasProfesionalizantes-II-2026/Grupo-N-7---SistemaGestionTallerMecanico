@@ -20,6 +20,10 @@ public static class SesionesCajaEndpoint
 
         app.MapPost("/api/sesiones-caja", async (SesionCajaWriteDto sesionCaja, ISesionesCajaLogica logica) =>
         {
+            var errorValidacion = sesionCaja.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = sesionCaja.ToEntity();
             await logica.AddSesionCajaAsync(entity);
             return Results.Created($"/api/sesiones-caja/{entity.Id}", entity.ToReadDto());
@@ -27,6 +31,10 @@ public static class SesionesCajaEndpoint
 
         app.MapPut("/api/sesiones-caja/{id}", async (int id, SesionCajaWriteDto sesionCaja, ISesionesCajaLogica logica) =>
         {
+            var errorValidacion = sesionCaja.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != sesionCaja.Id)
                 return Results.BadRequest();
 

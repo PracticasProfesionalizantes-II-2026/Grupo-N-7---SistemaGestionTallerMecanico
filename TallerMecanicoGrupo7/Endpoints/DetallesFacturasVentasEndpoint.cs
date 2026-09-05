@@ -20,6 +20,10 @@ public static class DetallesFacturasVentasEndpoint
 
         app.MapPost("/api/detalles-facturas-ventas", async (DetalleFacturaVentaWriteDto detalleFacturaVenta, IDetallesFacturasVentasLogica logica) =>
         {
+            var errorValidacion = detalleFacturaVenta.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = detalleFacturaVenta.ToEntity();
             await logica.AddDetalleFacturaVentaAsync(entity);
             return Results.Created($"/api/detalles-facturas-ventas/{entity.Id}", entity.ToReadDto());
@@ -27,6 +31,10 @@ public static class DetallesFacturasVentasEndpoint
 
         app.MapPut("/api/detalles-facturas-ventas/{id}", async (int id, DetalleFacturaVentaWriteDto detalleFacturaVenta, IDetallesFacturasVentasLogica logica) =>
         {
+            var errorValidacion = detalleFacturaVenta.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != detalleFacturaVenta.Id)
                 return Results.BadRequest();
 

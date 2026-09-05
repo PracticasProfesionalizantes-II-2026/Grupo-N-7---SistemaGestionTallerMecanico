@@ -20,6 +20,10 @@ public static class InsumosEndpoint
 
         app.MapPost("/api/insumos", async (InsumoWriteDto insumo, IInsumosLogica logica) =>
         {
+            var errorValidacion = insumo.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = insumo.ToEntity();
             await logica.AddInsumoAsync(entity);
             return Results.Created($"/api/insumos/{entity.Id}", entity.ToReadDto());
@@ -27,6 +31,10 @@ public static class InsumosEndpoint
 
         app.MapPut("/api/insumos/{id}", async (int id, InsumoWriteDto insumo, IInsumosLogica logica) =>
         {
+            var errorValidacion = insumo.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != insumo.Id)
                 return Results.BadRequest();
 

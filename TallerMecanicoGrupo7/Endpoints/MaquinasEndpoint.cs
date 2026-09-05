@@ -20,6 +20,10 @@ public static class MaquinasEndpoint
 
         app.MapPost("/api/maquinas", async (MaquinaWriteDto maquina, IMaquinasLogica logica) =>
         {
+            var errorValidacion = maquina.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = maquina.ToEntity();
             await logica.AddMaquinaAsync(entity);
             return Results.Created($"/api/maquinas/{entity.Id}", entity.ToReadDto());
@@ -27,6 +31,10 @@ public static class MaquinasEndpoint
 
         app.MapPut("/api/maquinas/{id}", async (int id, MaquinaWriteDto maquina, IMaquinasLogica logica) =>
         {
+            var errorValidacion = maquina.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != maquina.Id)
                 return Results.BadRequest();
 

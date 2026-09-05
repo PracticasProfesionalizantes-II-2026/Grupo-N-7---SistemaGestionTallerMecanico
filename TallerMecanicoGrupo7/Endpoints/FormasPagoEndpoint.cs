@@ -20,6 +20,10 @@ public static class FormasPagoEndpoint
 
         app.MapPost("/api/formas-pago", async (FormaPagoWriteDto formaPago, IFormasPagoLogica logica) =>
         {
+            var errorValidacion = formaPago.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = formaPago.ToEntity();
             await logica.AddFormaPagoAsync(entity);
             return Results.Created($"/api/formas-pago/{entity.Id}", entity.ToReadDto());
@@ -27,6 +31,10 @@ public static class FormasPagoEndpoint
 
         app.MapPut("/api/formas-pago/{id}", async (int id, FormaPagoWriteDto formaPago, IFormasPagoLogica logica) =>
         {
+            var errorValidacion = formaPago.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != formaPago.Id)
                 return Results.BadRequest();
 

@@ -20,6 +20,10 @@ public static class UsuariosEndpoint
 
         app.MapPost("/api/usuarios/login", async (UsuarioLoginDto login, IUsuariosLogica logica) =>
         {
+            var errorValidacion = login.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var usuario = await logica.GetUsuarioByCredencialesAsync(login.Correo, login.Contrasena);
             return usuario is not null
                 ? Results.Ok(usuario.ToReadDto())
@@ -28,6 +32,10 @@ public static class UsuariosEndpoint
 
         app.MapPost("/api/usuarios", async (UsuarioWriteDto usuario, IUsuariosLogica logica) =>
         {
+            var errorValidacion = usuario.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = usuario.ToEntity();
             await logica.AddUsuarioAsync(entity);
             return Results.Created($"/api/usuarios/{entity.Id}", entity.ToReadDto());
@@ -35,6 +43,10 @@ public static class UsuariosEndpoint
 
         app.MapPut("/api/usuarios/{id}", async (int id, UsuarioWriteDto usuario, IUsuariosLogica logica) =>
         {
+            var errorValidacion = usuario.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != usuario.Id)
                 return Results.BadRequest();
 

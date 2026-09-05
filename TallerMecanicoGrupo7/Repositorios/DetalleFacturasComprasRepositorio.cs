@@ -33,8 +33,10 @@ public class DetalleFacturasComprasRepositorio : IDetallesFacturasComprasReposit
             insumo.PrecioVenta,
             detalleFacturaCompra.Cantidad);
         detalleFacturaCompra.IdInsumo = insumo.Id;
+        detalleFacturaCompra.TotalCompra = Math.Round(detalleFacturaCompra.Cantidad * detalleFacturaCompra.PrecioUnitario, 2, MidpointRounding.AwayFromZero);
         _context.DetallesFacturasCompras.Add(detalleFacturaCompra);
         await _context.SaveChangesAsync();
+        await RecalcularTotalFacturaAsync(detalleFacturaCompra.IdFacturaCompra);
     }
 
     public async Task UpdateDetalleFacturaCompraAsync(DetalleFacturaCompra detalleFacturaCompra)
@@ -73,8 +75,15 @@ public class DetalleFacturasComprasRepositorio : IDetallesFacturasComprasReposit
         }
 
         detalleFacturaCompra.IdInsumo = insumoNuevo.Id;
+        detalleFacturaCompra.TotalCompra = Math.Round(detalleFacturaCompra.Cantidad * detalleFacturaCompra.PrecioUnitario, 2, MidpointRounding.AwayFromZero);
         _context.DetallesFacturasCompras.Update(detalleFacturaCompra);
         await _context.SaveChangesAsync();
+
+        await RecalcularTotalFacturaAsync(detalleFacturaCompra.IdFacturaCompra);
+        if (detalleExistente.IdFacturaCompra != detalleFacturaCompra.IdFacturaCompra)
+        {
+            await RecalcularTotalFacturaAsync(detalleExistente.IdFacturaCompra);
+        }
     }
 
     public async Task DeleteDetalleFacturaCompraAsync(int id)
@@ -90,8 +99,31 @@ public class DetalleFacturasComprasRepositorio : IDetallesFacturasComprasReposit
                 insumo.PrecioVenta,
                 -detalleFacturaCompra.Cantidad);
 
+            var idFacturaCompra = detalleFacturaCompra.IdFacturaCompra;
             _context.DetallesFacturasCompras.Remove(detalleFacturaCompra);
             await _context.SaveChangesAsync();
+            await RecalcularTotalFacturaAsync(idFacturaCompra);
         }
+    }
+
+    /// <summary>
+    /// El total de la factura nunca se toma de lo que mande el cliente: siempre se
+    /// recalcula como la suma real de sus detalles, para que no se pueda "inflar" o
+    /// "desinflar" una factura de compra editando el total sin tocar los ítems.
+    /// </summary>
+    private async Task RecalcularTotalFacturaAsync(int idFacturaCompra)
+    {
+        var factura = await _context.FacturasCompras.FindAsync(idFacturaCompra);
+        if (factura is null)
+        {
+            return;
+        }
+
+        var total = await _context.DetallesFacturasCompras
+            .Where(x => x.IdFacturaCompra == idFacturaCompra)
+            .SumAsync(x => (decimal?)x.TotalCompra) ?? 0m;
+
+        factura.TotalFactura = Math.Round(total, 2, MidpointRounding.AwayFromZero);
+        await _context.SaveChangesAsync();
     }
 }
