@@ -168,7 +168,23 @@ public class TrabajosPorTurnoController : Controller
         var usuarios = usuariosResponse.IsSuccessStatusCode
             ? await usuariosResponse.Content.ReadFromJsonAsync<List<Usuario>>() ?? new List<Usuario>()
             : new List<Usuario>();
-        ViewBag.Usuarios = usuarios.Where(x => x.Activo).ToList();
+
+        var rolesResponse = await _httpClient.GetAsync("api/roles");
+        var roles = rolesResponse.IsSuccessStatusCode
+            ? await rolesResponse.Content.ReadFromJsonAsync<List<Rol>>() ?? new List<Rol>()
+            : new List<Rol>();
+
+        // Solo se puede asignar mano de obra a usuarios con rol de mecánico
+        // (mismo criterio que valida el back en TrabajosPorTurnoRepositorio).
+        var idsRolesMecanico = roles
+            .Where(r => (r.Nombre ?? string.Empty).ToLowerInvariant().Contains("mecanic")
+                || (r.Nombre ?? string.Empty).ToLowerInvariant().Contains("mecánic"))
+            .Select(r => r.Id)
+            .ToHashSet();
+
+        ViewBag.Usuarios = usuarios
+            .Where(x => x.Activo && idsRolesMecanico.Contains(x.IdRol))
+            .ToList();
 
         if (!turnosResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los turnos.");

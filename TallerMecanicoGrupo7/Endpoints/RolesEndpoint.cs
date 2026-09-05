@@ -20,6 +20,10 @@ public static class RolesEndpoint
 
         app.MapPost("/api/roles", async (RolWriteDto rol, IRolesLogica logica) =>
         {
+            var errorValidacion = rol.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = rol.ToEntity();
             await logica.AddRolAsync(entity);
             return Results.Created($"/api/roles/{entity.Id}", entity.ToReadDto());
@@ -27,6 +31,10 @@ public static class RolesEndpoint
 
         app.MapPut("/api/roles/{id}", async (int id, RolWriteDto rol, IRolesLogica logica) =>
         {
+            var errorValidacion = rol.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != rol.Id)
                 return Results.BadRequest();
 

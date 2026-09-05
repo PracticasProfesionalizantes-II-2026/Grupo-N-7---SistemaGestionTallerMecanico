@@ -20,6 +20,10 @@ public static class CategoriasTrabajosEndpoint
 
         app.MapPost("/api/categorias-trabajos", async (CategoriaTrabajoWriteDto categoria, ICategoriasTrabajosLogica logica) =>
         {
+            var errorValidacion = categoria.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = categoria.ToEntity();
             await logica.AddCategoriaAsync(entity);
             return Results.Created($"/api/categorias-trabajos/{entity.Id}", entity.ToReadDto());
@@ -27,6 +31,10 @@ public static class CategoriasTrabajosEndpoint
 
         app.MapPut("/api/categorias-trabajos/{id}", async (int id, CategoriaTrabajoWriteDto categoria, ICategoriasTrabajosLogica logica) =>
         {
+            var errorValidacion = categoria.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != categoria.Id)
                 return Results.BadRequest();
 

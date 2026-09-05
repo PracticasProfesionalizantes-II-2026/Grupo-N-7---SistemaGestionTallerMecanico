@@ -147,7 +147,7 @@ public class FacturasVentasController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo actualizar la factura de venta. Detalle: {errorContent}");
-            await CargarOpcionesAsync();
+            await CargarOpcionesAsync(id);
             return View(facturaVenta);
         }
 

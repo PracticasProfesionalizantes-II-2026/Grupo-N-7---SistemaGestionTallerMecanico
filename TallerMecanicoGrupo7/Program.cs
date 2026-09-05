@@ -70,6 +70,24 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Las reglas de negocio (stock insuficiente, máquina de otro cliente, usuario sin rol
+// de mecánico, turno ya facturado, fechas de sesión de caja inválidas, etc.) se
+// señalizan lanzando InvalidOperationException desde los Repositorios/Logica.
+// Sin este middleware, esas excepciones explotan como un 500 sin información útil
+// para el cliente de la API.
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (InvalidOperationException ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+    }
+});
+
 app.MapCategoriasTrabajosEndpoints();
 app.MapClientesEndpoints();
 app.MapDetallesFacturasComprasEndpoints();

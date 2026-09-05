@@ -20,7 +20,7 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label asp-for="IdCliente" class="form-label">Cliente</label>
-                            <select asp-for="IdCliente" class="form-select" required>
+                            <select asp-for="IdCliente" class="form-select" id="selectCliente" required>
                                 <option value="">Seleccione un cliente</option>
                                 @foreach (var cliente in clientes)
                                 {
@@ -32,11 +32,11 @@
 
                         <div class="col-md-6">
                             <label asp-for="IdMaquina" class="form-label">Máquina</label>
-                            <select asp-for="IdMaquina" class="form-select" required>
-                                <option value="">Seleccione una máquina</option>
+                            <select asp-for="IdMaquina" class="form-select" id="selectMaquina" required>
+                                <option value="">Seleccione primero un cliente</option>
                                 @foreach (var maquina in maquinas)
                                 {
-                                    <option value="@maquina.Id">@maquina.Nombre - @maquina.Marca - @maquina.Patente</option>
+                                    <option value="@maquina.Id" data-cliente="@maquina.IdCliente">@maquina.Nombre - @maquina.Marca - @maquina.Patente</option>
                                 }
                             </select>
                             <span asp-validation-for="IdMaquina" class="text-danger"></span>
@@ -91,4 +91,35 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const selectCliente = document.getElementById('selectCliente');
+            const selectMaquina = document.getElementById('selectMaquina');
+            if (!selectCliente || !selectMaquina) return;
+
+            const opciones = Array.from(selectMaquina.options).filter(o => o.value !== '');
+
+            function filtrarMaquinas() {
+                const idCliente = selectCliente.value;
+                const valorPrevio = selectMaquina.value;
+
+                selectMaquina.innerHTML = '';
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = idCliente ? 'Seleccione una máquina' : 'Seleccione primero un cliente';
+                selectMaquina.appendChild(placeholder);
+
+                opciones
+                    .filter(o => !idCliente || o.dataset.cliente === idCliente)
+                    .forEach(o => selectMaquina.appendChild(o.cloneNode(true)));
+
+                if (Array.from(selectMaquina.options).some(o => o.value === valorPrevio)) {
+                    selectMaquina.value = valorPrevio;
+                }
+            }
+
+            selectCliente.addEventListener('change', filtrarMaquinas);
+            filtrarMaquinas();
+        })();
+    </script>
 }

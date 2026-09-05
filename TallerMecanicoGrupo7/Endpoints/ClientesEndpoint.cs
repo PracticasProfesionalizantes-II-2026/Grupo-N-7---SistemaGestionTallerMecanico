@@ -20,6 +20,10 @@ public static class ClientesEndpoint
 
         app.MapPost("/api/clientes", async (ClienteWriteDto cliente, IClientesLogica logica) =>
         {
+            var errorValidacion = cliente.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = cliente.ToEntity();
             await logica.AddClienteAsync(entity);
             return Results.Created($"/api/clientes/{entity.Id}", entity.ToReadDto());
@@ -27,6 +31,10 @@ public static class ClientesEndpoint
 
         app.MapPut("/api/clientes/{id}", async (int id, ClienteWriteDto cliente, IClientesLogica logica) =>
         {
+            var errorValidacion = cliente.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != cliente.Id)
                 return Results.BadRequest();
 

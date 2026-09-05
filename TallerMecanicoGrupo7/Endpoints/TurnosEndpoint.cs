@@ -20,6 +20,10 @@ public static class TurnosEndpoint
 
         app.MapPost("/api/turnos", async (TurnoWriteDto turno, ITurnosLogica logica) =>
         {
+            var errorValidacion = turno.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = turno.ToEntity();
             await logica.AddTurnoAsync(entity);
             return Results.Created($"/api/turnos/{entity.Id}", entity.ToReadDto());
@@ -27,6 +31,10 @@ public static class TurnosEndpoint
 
         app.MapPut("/api/turnos/{id}", async (int id, TurnoWriteDto turno, ITurnosLogica logica) =>
         {
+            var errorValidacion = turno.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != turno.Id)
                 return Results.BadRequest();
 

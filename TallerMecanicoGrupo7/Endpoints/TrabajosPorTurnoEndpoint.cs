@@ -20,6 +20,10 @@ public static class TrabajosPorTurnoEndpoint
 
         app.MapPost("/api/trabajos-por-turno", async (TrabajoPorTurnoWriteDto trabajoPorTurno, ITrabajosPorTurnoLogica logica) =>
         {
+            var errorValidacion = trabajoPorTurno.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = trabajoPorTurno.ToEntity();
             await logica.AddTrabajoPorTurnoAsync(entity);
             return Results.Created($"/api/trabajos-por-turno/{entity.Id}", entity.ToReadDto());
@@ -27,6 +31,10 @@ public static class TrabajosPorTurnoEndpoint
 
         app.MapPut("/api/trabajos-por-turno/{id}", async (int id, TrabajoPorTurnoWriteDto trabajoPorTurno, ITrabajosPorTurnoLogica logica) =>
         {
+            var errorValidacion = trabajoPorTurno.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != trabajoPorTurno.Id)
                 return Results.BadRequest();
 

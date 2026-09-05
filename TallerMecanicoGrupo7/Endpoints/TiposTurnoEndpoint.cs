@@ -20,6 +20,10 @@ public static class TiposTurnoEndpoint
 
         app.MapPost("/api/tipos-turno", async (TipoTurnoWriteDto tipoTurno, ITiposTurnoLogica logica) =>
         {
+            var errorValidacion = tipoTurno.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = tipoTurno.ToEntity();
             await logica.AddTipoTurnoAsync(entity);
             return Results.Created($"/api/tipos-turno/{entity.Id}", entity.ToReadDto());
@@ -27,6 +31,10 @@ public static class TiposTurnoEndpoint
 
         app.MapPut("/api/tipos-turno/{id}", async (int id, TipoTurnoWriteDto tipoTurno, ITiposTurnoLogica logica) =>
         {
+            var errorValidacion = tipoTurno.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != tipoTurno.Id)
                 return Results.BadRequest();
 

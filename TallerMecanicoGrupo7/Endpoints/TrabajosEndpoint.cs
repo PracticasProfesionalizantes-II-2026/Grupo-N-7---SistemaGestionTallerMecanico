@@ -20,6 +20,10 @@ public static class TrabajosEndpoint
 
         app.MapPost("/api/trabajos", async (TrabajoWriteDto trabajo, ITrabajosLogica logica) =>
         {
+            var errorValidacion = trabajo.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = trabajo.ToEntity();
             await logica.AddTrabajoAsync(entity);
             return Results.Created($"/api/trabajos/{entity.Id}", entity.ToReadDto());
@@ -27,6 +31,10 @@ public static class TrabajosEndpoint
 
         app.MapPut("/api/trabajos/{id}", async (int id, TrabajoWriteDto trabajo, ITrabajosLogica logica) =>
         {
+            var errorValidacion = trabajo.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != trabajo.Id)
                 return Results.BadRequest();
 

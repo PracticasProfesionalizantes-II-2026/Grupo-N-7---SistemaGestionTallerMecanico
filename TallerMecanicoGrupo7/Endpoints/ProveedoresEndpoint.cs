@@ -20,6 +20,10 @@ public static class ProveedoresEndpoint
 
         app.MapPost("/api/proveedores", async (ProveedorWriteDto proveedor, IProveedoresLogica logica) =>
         {
+            var errorValidacion = proveedor.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             var entity = proveedor.ToEntity();
             await logica.AddProveedorAsync(entity);
             return Results.Created($"/api/proveedores/{entity.Id}", entity.ToReadDto());
@@ -27,6 +31,10 @@ public static class ProveedoresEndpoint
 
         app.MapPut("/api/proveedores/{id}", async (int id, ProveedorWriteDto proveedor, IProveedoresLogica logica) =>
         {
+            var errorValidacion = proveedor.Validar();
+            if (errorValidacion is not null)
+                return errorValidacion;
+
             if (id != proveedor.Id)
                 return Results.BadRequest();
 
