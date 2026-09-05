@@ -23,6 +23,10 @@ public class TurnosController : Controller
         }
 
         var turnos = await response.Content.ReadFromJsonAsync<List<Turno>>() ?? new List<Turno>();
+        var estadosResponse = await _httpClient.GetAsync("api/estados-turno");
+        ViewBag.EstadosTurno = estadosResponse.IsSuccessStatusCode
+            ? await estadosResponse.Content.ReadFromJsonAsync<List<EstadoTurno>>() ?? new List<EstadoTurno>()
+            : new List<EstadoTurno>();
         return View(turnos);
     }
 
@@ -66,7 +70,10 @@ public class TurnosController : Controller
             return View(turno);
         }
 
-        return RedirectToAction(nameof(Index));
+        var turnoCreado = await response.Content.ReadFromJsonAsync<Turno>();
+        return turnoCreado is null
+            ? RedirectToAction(nameof(Index))
+            : RedirectToAction("Create", "DetallesTurnos", new { turnoId = turnoCreado.Id });
     }
 
     public async Task<IActionResult> Edit(int id)
