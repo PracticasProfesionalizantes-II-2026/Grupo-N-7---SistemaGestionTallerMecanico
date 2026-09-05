@@ -1,15 +1,21 @@
 @model TallerMecanicoFront.Models.UsuarioLoginViewModel
 @{
     ViewData["Title"] = "Iniciar sesión";
+    Layout = "_LoginLayout";
 }
 
-<div class="row justify-content-center align-items-center min-vh-75">
+<div class="row justify-content-center align-items-center">
     <div class="col-md-5">
         <div class="card shadow-sm border-0">
             <div class="card-body p-4 p-lg-5">
                 <h1 class="h3 mb-4 text-center">Iniciar sesión</h1>
 
-                <form asp-action="Login" method="post">
+                @if (TempData["Mensaje"] is string mensaje)
+                {
+                    <div class="alert alert-success">@mensaje</div>
+                }
+
+                <form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post">
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                     <div class="mb-3">
