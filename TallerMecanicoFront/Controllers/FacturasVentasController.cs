@@ -23,6 +23,18 @@ public class FacturasVentasController : Controller
         }
 
         var facturas = await response.Content.ReadFromJsonAsync<List<FacturaVenta>>() ?? new List<FacturaVenta>();
+        var detallesResponse = await _httpClient.GetAsync("api/detalles-facturas-ventas");
+        if (detallesResponse.IsSuccessStatusCode)
+        {
+            var detalles = await detallesResponse.Content.ReadFromJsonAsync<List<DetalleFacturaVenta>>() ?? new List<DetalleFacturaVenta>();
+            foreach (var factura in facturas)
+            {
+                factura.TotalFactura = Math.Round(
+                    detalles.Where(x => x.IdFactura == factura.Id).Sum(x => x.TotalDetalle),
+                    2,
+                    MidpointRounding.AwayFromZero);
+            }
+        }
         return View(facturas);
     }
 
@@ -41,10 +53,8 @@ public class FacturasVentasController : Controller
             return BadRequest();
         }
 
-        if (facturaVenta.TotalFactura < 0)
-        {
-            ModelState.AddModelError(nameof(facturaVenta.TotalFactura), "El total no puede ser negativo.");
-        }
+        facturaVenta.TotalFactura = 0;
+        await ValidarTurnoDisponibleAsync(facturaVenta.IdTurno);
 
         if (facturaVenta.Pagado && facturaVenta.FechaPagoFactura is null)
         {
@@ -71,7 +81,10 @@ public class FacturasVentasController : Controller
             return View(facturaVenta);
         }
 
-        return RedirectToAction(nameof(Index));
+        var facturaCreada = await response.Content.ReadFromJsonAsync<FacturaVenta>();
+        return facturaCreada is null
+            ? RedirectToAction(nameof(Index))
+            : RedirectToAction("Create", "DetallesFacturasVentas", new { facturaId = facturaCreada.Id });
     }
 
     public async Task<IActionResult> Edit(int id)
@@ -88,7 +101,8 @@ public class FacturasVentasController : Controller
             return NotFound();
         }
 
-        await CargarOpcionesAsync();
+        facturaVenta.TotalFactura = await CalcularTotalAsync(id);
+        await CargarOpcionesAsync(id);
         return View(facturaVenta);
     }
 
@@ -101,10 +115,16 @@ public class FacturasVentasController : Controller
             return BadRequest();
         }
 
-        if (facturaVenta.TotalFactura < 0)
+        await ValidarTurnoDisponibleAsync(facturaVenta.IdTurno, id);
+        var facturaActualResponse = await _httpClient.GetAsync($"api/facturas-ventas/{id}");
+        var facturaActual = facturaActualResponse.IsSuccessStatusCode
+            ? await facturaActualResponse.Content.ReadFromJsonAsync<FacturaVenta>()
+            : null;
+        if (facturaActual is null)
         {
-            ModelState.AddModelError(nameof(facturaVenta.TotalFactura), "El total no puede ser negativo.");
+            return NotFound();
         }
+        facturaVenta.TotalFactura = await CalcularTotalAsync(id);
 
         if (facturaVenta.Pagado && facturaVenta.FechaPagoFactura is null)
         {
@@ -118,7 +138,7 @@ public class FacturasVentasController : Controller
 
         if (!ModelState.IsValid)
         {
-            await CargarOpcionesAsync();
+            await CargarOpcionesAsync(id);
             return View(facturaVenta);
         }
 
@@ -147,7 +167,7 @@ public class FacturasVentasController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    private async Task CargarOpcionesAsync()
+    private async Task CargarOpcionesAsync(int? facturaId = null)
     {
         var clientesResponse = await _httpClient.GetAsync("api/clientes");
         var clientes = clientesResponse.IsSuccessStatusCode
@@ -156,9 +176,20 @@ public class FacturasVentasController : Controller
         ViewBag.Clientes = clientes.Where(x => x.Activo).ToList();
 
         var turnosResponse = await _httpClient.GetAsync("api/turnos");
-        ViewBag.Turnos = turnosResponse.IsSuccessStatusCode
+        var turnos = turnosResponse.IsSuccessStatusCode
             ? await turnosResponse.Content.ReadFromJsonAsync<List<Turno>>() ?? new List<Turno>()
             : new List<Turno>();
+
+        var facturasResponse = await _httpClient.GetAsync("api/facturas-ventas");
+        var turnosFacturados = facturasResponse.IsSuccessStatusCode
+            ? (await facturasResponse.Content.ReadFromJsonAsync<List<FacturaVenta>>() ?? new List<FacturaVenta>())
+                .Where(x => x.Id != facturaId)
+                .Select(x => x.IdTurno)
+                .ToHashSet()
+            : new HashSet<int>();
+        ViewBag.Turnos = turnos
+            .Where(x => !turnosFacturados.Contains(x.Id))
+            .ToList();
 
         var sesionesResponse = await _httpClient.GetAsync("api/sesiones-caja");
         var sesionesCaja = sesionesResponse.IsSuccessStatusCode
@@ -177,9 +208,41 @@ public class FacturasVentasController : Controller
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los clientes.");
         if (!turnosResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los turnos.");
+        if (!facturasResponse.IsSuccessStatusCode)
+            ModelState.AddModelError(string.Empty, "No se pudieron verificar los turnos ya facturados.");
         if (!sesionesResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar las sesiones de caja.");
         if (!formasPagoResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar las formas de pago.");
+    }
+
+    private async Task<decimal> CalcularTotalAsync(int facturaId)
+    {
+        var response = await _httpClient.GetAsync("api/detalles-facturas-ventas");
+        if (!response.IsSuccessStatusCode)
+        {
+            return 0;
+        }
+
+        var detalles = await response.Content.ReadFromJsonAsync<List<DetalleFacturaVenta>>() ?? new List<DetalleFacturaVenta>();
+        return Math.Round(
+            detalles.Where(x => x.IdFactura == facturaId).Sum(x => x.TotalDetalle),
+            2,
+            MidpointRounding.AwayFromZero);
+    }
+
+    private async Task ValidarTurnoDisponibleAsync(int turnoId, int? facturaId = null)
+    {
+        var response = await _httpClient.GetAsync("api/facturas-ventas");
+        if (!response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        var facturas = await response.Content.ReadFromJsonAsync<List<FacturaVenta>>() ?? new List<FacturaVenta>();
+        if (facturas.Any(x => x.IdTurno == turnoId && x.Id != facturaId))
+        {
+            ModelState.AddModelError(nameof(FacturaVenta.IdTurno), "El turno seleccionado ya tiene una factura de venta.");
+        }
     }
 }

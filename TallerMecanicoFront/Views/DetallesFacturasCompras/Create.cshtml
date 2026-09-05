@@ -17,7 +17,8 @@
 
                     <div class="mb-3">
                         <label asp-for="IdFacturaCompra" class="form-label">Factura de compra</label>
-                        <select asp-for="IdFacturaCompra" class="form-select" required>
+                        <input asp-for="IdFacturaCompra" type="hidden" />
+                        <select asp-for="IdFacturaCompra" class="form-select" disabled>
                             <option value="">Seleccione una factura</option>
                             @foreach (var factura in facturas)
                             {

@@ -20,7 +20,8 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label asp-for="IdFactura" class="form-label">Factura de venta</label>
-                            <select asp-for="IdFactura" class="form-select" required>
+                            <input asp-for="IdFactura" type="hidden" />
+                            <select asp-for="IdFactura" class="form-select" disabled>
                                 <option value="">Seleccione una factura</option>
                                 @foreach (var factura in facturas)
                                 {

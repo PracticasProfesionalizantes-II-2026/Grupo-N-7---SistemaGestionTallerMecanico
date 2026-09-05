@@ -23,6 +23,18 @@ public class FacturasComprasController : Controller
         }
 
         var facturas = await response.Content.ReadFromJsonAsync<List<FacturaCompra>>() ?? new List<FacturaCompra>();
+        var detallesResponse = await _httpClient.GetAsync("api/detalles-facturas-compras");
+        if (detallesResponse.IsSuccessStatusCode)
+        {
+            var detalles = await detallesResponse.Content.ReadFromJsonAsync<List<DetalleFacturaCompra>>() ?? new List<DetalleFacturaCompra>();
+            foreach (var factura in facturas)
+            {
+                factura.TotalFactura = Math.Round(
+                    detalles.Where(x => x.IdFacturaCompra == factura.Id).Sum(x => x.TotalCompra),
+                    2,
+                    MidpointRounding.AwayFromZero);
+            }
+        }
         return View(facturas);
     }
 
@@ -41,10 +53,7 @@ public class FacturasComprasController : Controller
             return BadRequest();
         }
 
-        if (facturaCompra.TotalFactura < 0)
-        {
-            ModelState.AddModelError(nameof(facturaCompra.TotalFactura), "El total no puede ser negativo.");
-        }
+        facturaCompra.TotalFactura = 0;
 
         if (facturaCompra.Pagado && facturaCompra.FechaPagoFactura is null)
         {
@@ -71,7 +80,10 @@ public class FacturasComprasController : Controller
             return View(facturaCompra);
         }
 
-        return RedirectToAction(nameof(Index));
+        var facturaCreada = await response.Content.ReadFromJsonAsync<FacturaCompra>();
+        return facturaCreada is null
+            ? RedirectToAction(nameof(Index))
+            : RedirectToAction("Create", "DetallesFacturasCompras", new { facturaId = facturaCreada.Id });
     }
 
     public async Task<IActionResult> Edit(int id)
@@ -88,6 +100,7 @@ public class FacturasComprasController : Controller
             return NotFound();
         }
 
+        facturaCompra.TotalFactura = await CalcularTotalAsync(id);
         await CargarOpcionesAsync();
         return View(facturaCompra);
     }
@@ -101,10 +114,15 @@ public class FacturasComprasController : Controller
             return BadRequest();
         }
 
-        if (facturaCompra.TotalFactura < 0)
+        var facturaActualResponse = await _httpClient.GetAsync($"api/facturas-compras/{id}");
+        var facturaActual = facturaActualResponse.IsSuccessStatusCode
+            ? await facturaActualResponse.Content.ReadFromJsonAsync<FacturaCompra>()
+            : null;
+        if (facturaActual is null)
         {
-            ModelState.AddModelError(nameof(facturaCompra.TotalFactura), "El total no puede ser negativo.");
+            return NotFound();
         }
+        facturaCompra.TotalFactura = await CalcularTotalAsync(id);
 
         if (facturaCompra.Pagado && facturaCompra.FechaPagoFactura is null)
         {
@@ -174,5 +192,20 @@ public class FacturasComprasController : Controller
             ModelState.AddModelError(string.Empty, "No se pudieron cargar las sesiones de caja.");
         if (!formasPagoResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar las formas de pago.");
+    }
+
+    private async Task<decimal> CalcularTotalAsync(int facturaId)
+    {
+        var response = await _httpClient.GetAsync("api/detalles-facturas-compras");
+        if (!response.IsSuccessStatusCode)
+        {
+            return 0;
+        }
+
+        var detalles = await response.Content.ReadFromJsonAsync<List<DetalleFacturaCompra>>() ?? new List<DetalleFacturaCompra>();
+        return Math.Round(
+            detalles.Where(x => x.IdFacturaCompra == facturaId).Sum(x => x.TotalCompra),
+            2,
+            MidpointRounding.AwayFromZero);
     }
 }

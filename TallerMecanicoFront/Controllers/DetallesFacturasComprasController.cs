@@ -26,10 +26,27 @@ public class DetallesFacturasComprasController : Controller
         return View(detalles);
     }
 
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(int? facturaId)
     {
+        if (!facturaId.HasValue || facturaId.Value <= 0)
+        {
+            return RedirectToAction("Index", "FacturasCompras");
+        }
+
+        var factura = await ObtenerFacturaAsync(facturaId.Value);
+        if (factura is null)
+        {
+            return NotFound();
+        }
+
+        if (factura.Pagado)
+        {
+            TempData["Error"] = "No se pueden agregar detalles a una factura de compra pagada.";
+            return RedirectToAction("Index", "FacturasCompras");
+        }
+
         await CargarOpcionesAsync();
-        return View(new DetalleFacturaCompra());
+        return View(new DetalleFacturaCompra { IdFacturaCompra = facturaId ?? 0 });
     }
 
     [HttpPost]
@@ -39,6 +56,24 @@ public class DetallesFacturasComprasController : Controller
         if (detalle is null)
         {
             return BadRequest();
+        }
+
+        if (detalle.IdFacturaCompra <= 0)
+        {
+            ModelState.AddModelError(nameof(detalle.IdFacturaCompra), "La factura de compra es requerida.");
+        }
+
+        var factura = detalle.IdFacturaCompra > 0
+            ? await ObtenerFacturaAsync(detalle.IdFacturaCompra)
+            : null;
+        if (factura is null)
+        {
+            ModelState.AddModelError(nameof(detalle.IdFacturaCompra), "La factura de compra no existe.");
+        }
+        else if (factura.Pagado)
+        {
+            TempData["Error"] = "No se pueden agregar detalles a una factura de compra pagada.";
+            return RedirectToAction("Index", "FacturasCompras");
         }
 
         if (!await ValidarInsumoAsync(detalle))
@@ -86,6 +121,7 @@ public class DetallesFacturasComprasController : Controller
             return View(detalle);
         }
 
+        await ActualizarTotalFacturaAsync(detalle.IdFacturaCompra);
         return RedirectToAction(nameof(Index));
     }
 
@@ -115,6 +151,11 @@ public class DetallesFacturasComprasController : Controller
         {
             return BadRequest();
         }
+
+        var detalleOriginalResponse = await _httpClient.GetAsync($"api/detalles-facturas-compras/{id}");
+        var detalleOriginal = detalleOriginalResponse.IsSuccessStatusCode
+            ? await detalleOriginalResponse.Content.ReadFromJsonAsync<DetalleFacturaCompra>()
+            : null;
 
         if (!await ValidarInsumoAsync(detalle))
         {
@@ -150,6 +191,11 @@ public class DetallesFacturasComprasController : Controller
             return View(detalle);
         }
 
+        await ActualizarTotalFacturaAsync(detalle.IdFacturaCompra);
+        if (detalleOriginal is not null && detalleOriginal.IdFacturaCompra != detalle.IdFacturaCompra)
+        {
+            await ActualizarTotalFacturaAsync(detalleOriginal.IdFacturaCompra);
+        }
         return RedirectToAction(nameof(Index));
     }
 
@@ -157,10 +203,18 @@ public class DetallesFacturasComprasController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
+        var detalleResponse = await _httpClient.GetAsync($"api/detalles-facturas-compras/{id}");
+        var detalle = detalleResponse.IsSuccessStatusCode
+            ? await detalleResponse.Content.ReadFromJsonAsync<DetalleFacturaCompra>()
+            : null;
         var response = await _httpClient.DeleteAsync($"api/detalles-facturas-compras/{id}");
         if (!response.IsSuccessStatusCode)
         {
             TempData["Error"] = "No se pudo eliminar el detalle de factura de compra.";
+        }
+        else if (detalle is not null)
+        {
+            await ActualizarTotalFacturaAsync(detalle.IdFacturaCompra);
         }
 
         return RedirectToAction(nameof(Index));
@@ -205,5 +259,36 @@ public class DetallesFacturasComprasController : Controller
         }
 
         return true;
+    }
+
+    private async Task ActualizarTotalFacturaAsync(int facturaId)
+    {
+        var detallesResponse = await _httpClient.GetAsync("api/detalles-facturas-compras");
+        var facturaResponse = await _httpClient.GetAsync($"api/facturas-compras/{facturaId}");
+        if (!detallesResponse.IsSuccessStatusCode || !facturaResponse.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        var detalles = await detallesResponse.Content.ReadFromJsonAsync<List<DetalleFacturaCompra>>() ?? new List<DetalleFacturaCompra>();
+        var factura = await facturaResponse.Content.ReadFromJsonAsync<FacturaCompra>();
+        if (factura is null)
+        {
+            return;
+        }
+
+        factura.TotalFactura = Math.Round(
+            detalles.Where(x => x.IdFacturaCompra == facturaId).Sum(x => x.TotalCompra),
+            2,
+            MidpointRounding.AwayFromZero);
+        await _httpClient.PutAsJsonAsync($"api/facturas-compras/{facturaId}", factura);
+    }
+
+    private async Task<FacturaCompra?> ObtenerFacturaAsync(int facturaId)
+    {
+        var response = await _httpClient.GetAsync($"api/facturas-compras/{facturaId}");
+        return response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<FacturaCompra>()
+            : null;
     }
 }
