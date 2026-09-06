@@ -1,8 +1,92 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model TallerMecanicoFront.Models.HomeDashboardViewModel
+@{
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="dashboard-card dashboard-card-verde">
+            <i class="bi bi-calendar3-week dashboard-card-icono"></i>
+            <div>
+                <div class="dashboard-card-numero">@Model.TotalTurnos</div>
+                <div class="dashboard-card-etiqueta">TURNOS</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="dashboard-card dashboard-card-amarillo">
+            <i class="bi bi-hourglass-split dashboard-card-icono"></i>
+            <div>
+                <div class="dashboard-card-numero">@Model.TurnosPendientes</div>
+                <div class="dashboard-card-etiqueta">Pendientes</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="dashboard-card dashboard-card-azul">
+            <i class="bi bi-receipt dashboard-card-icono"></i>
+            <div>
+                <div class="dashboard-card-numero">@Model.FacturasPendientesDePago</div>
+                <div class="dashboard-card-etiqueta">Facturas por cobrar</div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div class="dashboard-panel">
+    <h2 class="h4 mb-4">Estadística de la semana</h2>
+    <div class="row text-center g-4">
+        <div class="col-12 col-md-6">
+            <p class="text-white-50 mb-2">Total turnos</p>
+            <canvas id="donutTotalTurnos" width="220" height="220"></canvas>
+        </div>
+        <div class="col-12 col-md-6">
+            <p class="text-white-50 mb-2">Pendientes</p>
+            <canvas id="donutPendientes" width="220" height="220"></canvas>
+        </div>
+    </div>
+    @if (Model.TurnosSemana == 0)
+    {
+        <p class="text-white-50 text-center mt-3 mb-0">No hay turnos cargados para los próximos 7 días (afecta solo al gráfico "Pendientes").</p>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script>
+        function dibujarDonut(idCanvas, porcentaje, color) {
+            const ctx = document.getElementById(idCanvas);
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [porcentaje, 100 - porcentaje],
+                        backgroundColor: [color, '#111827'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    cutout: '75%',
+                    responsive: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                },
+                plugins: [{
+                    id: 'textoCentral',
+                    afterDraw(chart) {
+                        const { ctx, chartArea: { width, height, top, left } } = chart;
+                        ctx.save();
+                        ctx.font = 'bold 28px sans-serif';
+                        ctx.fillStyle = '#ffffff';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(porcentaje + '%', left + width / 2, top + height / 2);
+                        ctx.restore();
+                    }
+                }]
+            });
+        }
+
+        dibujarDonut('donutTotalTurnos', @Model.PorcentajeEnCurso, '#22c55e');
+        dibujarDonut('donutPendientes', @Model.PorcentajePendientesSemana, '#22c55e');
+    </script>
+}

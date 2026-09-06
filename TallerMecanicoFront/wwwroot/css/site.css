@@ -29,3 +29,95 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+
+/* ---- Contenido principal ---- */
+.main-content {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.main-topbar {
+    padding: 0.85rem 1.5rem;
+    color: #cbd3e1;
+    font-size: 0.95rem;
+}
+
+.main-content footer.text-muted {
+    color: #9aa3b5 !important;
+}
+
+.main-content footer.text-muted a {
+    color: #cbd3e1;
+}
+
+/* Contenedor común de las vistas internas. */
+.content-card {
+  background-color: var(--azul-taller);
+  color: #fff;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    min-height: calc(100vh - 130px);
+}
+
+.content-card .card,
+.content-card .card-body,
+.content-card form:not(.d-inline) {
+  background-color: var(--azul-taller);
+  color: #fff;
+}
+
+.content-card .form-control,
+.content-card .form-select {
+  background-color: #fff;
+  color: #212529;
+}
+
+/* ---- Tarjetas del dashboard (Home) ---- */
+.dashboard-card {
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #fff;
+    height: 100%;
+}
+
+.dashboard-card-icono {
+    font-size: 2.25rem;
+}
+
+.dashboard-card-numero {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.dashboard-card-etiqueta {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.dashboard-card-verde {
+    background-color: #14532d;
+    border: 1px solid #22c55e;
+}
+
+.dashboard-card-amarillo {
+    background-color: #3f2f05;
+    border: 1px solid #eab308;
+}
+
+.dashboard-card-azul {
+    background-color: #0c4a6e;
+    border: 1px solid #38bdf8;
+}
+
+.dashboard-panel {
+  background-color: var(--azul-taller);
+    color: #fff;
+    border-radius: 0.75rem;
+    padding: 1.75rem;
+}
