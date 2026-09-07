@@ -17,6 +17,7 @@ builder.Services.AddControllersWithViews(options =>
         .RequireAuthenticatedUser()
         .Build();
     options.Filters.Add(new AuthorizeFilter(politicaGlobal));
+    options.Filters.Add<RestringirAccesoMecanicoFilter>();
 });
 
 builder.Services.AddHttpClient("TallerApi", client =>
