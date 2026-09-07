@@ -25,7 +25,7 @@
                         <div class="col-md-6"><label asp-for="IdRol" class="form-label">Rol</label><select asp-for="IdRol" class="form-select" required><option value="">Seleccione un rol</option>@foreach (var rol in roles){<option value="@rol.Id">@rol.Nombre</option>}</select><span asp-validation-for="IdRol" class="text-danger"></span></div>
                         <div class="col-md-6"><label asp-for="ContraseñaHash" class="form-label">Contraseña</label><input asp-for="ContraseñaHash" type="password" class="form-control" minlength="5" maxlength="255" required /><span asp-validation-for="ContraseñaHash" class="text-danger"></span></div>
                     </div>
-                    <div class="form-check mt-4 mb-4"><input asp-for="Activo" class="form-check-input" /><label asp-for="Activo" class="form-check-label">Usuario activo</label></div>
+                    <input type="hidden" asp-for="Activo" value="true" />
                     <div class="d-flex gap-2"><button type="submit" class="btn btn-primary">Guardar</button><a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a></div>
                 </form>
             </div>
