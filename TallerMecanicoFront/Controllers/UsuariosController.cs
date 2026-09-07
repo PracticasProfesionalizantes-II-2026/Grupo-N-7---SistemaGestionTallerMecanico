@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TallerMecanicoFront.Infrastructure;
 using TallerMecanicoFront.Models;
 
 namespace TallerMecanicoFront.Controllers;
@@ -58,6 +59,12 @@ public class UsuariosController : Controller
             return View(login);
         }
 
+        // Los roles son texto libre (sin código fijo en la base), por eso se resuelve
+        // el nombre del rol acá y se guarda como claim — el resto del sitio (menú,
+        // filtro de acceso) decide por nombre ("Administrador", "Mecánico"), no por Id.
+        var roles = await _httpClient.GetFromJsonAsync<List<Rol>>("api/roles") ?? new List<Rol>();
+        var nombreRol = roles.FirstOrDefault(r => r.Id == usuario.IdRol)?.Nombre ?? string.Empty;
+
         // La API ya validó las credenciales; acá solo emitimos la identidad
         // de sesión (cookie) para que el resto del sitio sepa quién entró
         // y qué rol tiene, sin volver a pedir la contraseña en cada request.
@@ -66,7 +73,7 @@ public class UsuariosController : Controller
             new(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
             new(ClaimTypes.Name, $"{usuario.Nombre} {usuario.Apellido}".Trim()),
             new(ClaimTypes.Email, usuario.Correo),
-            new(ClaimTypes.Role, usuario.IdRol.ToString())
+            new(ClaimTypes.Role, nombreRol)
         };
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -83,6 +90,11 @@ public class UsuariosController : Controller
 
         if (Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
+
+        // Un mecánico entra directo a Turnos: no tiene sentido mandarlo al dashboard
+        // administrativo si de ahí no va a poder navegar a ningún otro lado.
+        if (RestringirAccesoMecanicoFilter.EsMecanico(nombreRol))
+            return RedirectToAction("Index", "Turnos");
 
         return RedirectToAction("Index", "Home");
     }
