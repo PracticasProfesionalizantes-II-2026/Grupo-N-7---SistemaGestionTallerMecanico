@@ -14,11 +14,24 @@ html {
 
 html {
   position: relative;
-  min-height: 100%;
+  height: 100%;
+  overflow-y: hidden;
 }
 
 body {
-  margin-bottom: 60px;
+  height: 100%;
+  margin-bottom: 0;
+  overflow-y: hidden;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+html,
+body {
+  scrollbar-width: none;
 }
 
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
