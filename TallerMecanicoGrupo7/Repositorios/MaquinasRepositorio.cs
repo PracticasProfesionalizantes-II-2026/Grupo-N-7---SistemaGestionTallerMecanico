@@ -31,6 +31,12 @@ public class MaquinasRepositorio : IMaquinasRepositorio
 
     public async Task UpdateMaquinaAsync(Maquina maquina)
     {
+        var existente = await _context.Maquinas.AsNoTracking().FirstOrDefaultAsync(x => x.Id == maquina.Id);
+        if (existente is not null && !existente.Activo)
+        {
+            throw new InvalidOperationException("No se puede editar una máquina dada de baja.");
+        }
+
         _context.DetachTrackedEntity(maquina);
         _context.Maquinas.Update(maquina);
         await _context.SaveChangesAsync();
@@ -41,7 +47,9 @@ public class MaquinasRepositorio : IMaquinasRepositorio
         var maquina = await _context.Maquinas.FindAsync(id);
         if (maquina != null)
         {
-            _context.Maquinas.Remove(maquina);
+            // Baja lógica: nunca se borra físicamente, para no perder la
+            // trazabilidad de facturas/turnos/trabajos que ya lo referencian.
+            maquina.Activo = false;
             await _context.SaveChangesAsync();
         }
     }

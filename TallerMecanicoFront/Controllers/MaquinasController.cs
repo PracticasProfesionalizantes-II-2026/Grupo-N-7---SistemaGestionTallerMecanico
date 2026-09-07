@@ -54,6 +54,25 @@ public class MaquinasController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // Vista de solo lectura: es la que se ofrece en vez de "Editar" cuando
+    // el registro está dado de baja (Activo = false).
+    public async Task<IActionResult> Details(int id)
+    {
+        var response = await _httpClient.GetAsync($"api/maquinas/{id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            return NotFound();
+        }
+
+        var maquina = await response.Content.ReadFromJsonAsync<Maquina>();
+        if (maquina is null)
+        {
+            return NotFound();
+        }
+
+        return View(maquina);
+    }
+
     public async Task<IActionResult> Edit(int id)
     {
         var response = await _httpClient.GetAsync($"api/maquinas/{id}");

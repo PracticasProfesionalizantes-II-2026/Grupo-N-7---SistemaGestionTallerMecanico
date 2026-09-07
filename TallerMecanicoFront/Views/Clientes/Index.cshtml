@@ -52,12 +52,17 @@
                         </td>
                         <td class="text-end">
                             <div class="d-inline-flex gap-2">
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
-                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar este cliente?');">
-                                        Eliminar
-                                    </button>
-                                </form>
+                                @if (item.Activo)
+                                {
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Dar de baja este cliente? Vas a poder seguir viendo su detalle, pero no editarlo.');">Dar de baja</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Ver detalle</a>
+                                }
                             </div>
                         </td>
                     </tr>

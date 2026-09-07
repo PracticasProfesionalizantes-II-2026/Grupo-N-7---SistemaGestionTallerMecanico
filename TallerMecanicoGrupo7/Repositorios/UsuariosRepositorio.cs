@@ -45,6 +45,11 @@ public class UsuariosRepositorio : IUsuariosRepositorio
         if (usuarioExistente is null)
             return;
 
+        if (!usuarioExistente.Activo)
+        {
+            throw new InvalidOperationException("No se puede editar un usuario dado de baja.");
+        }
+
         _context.Entry(usuarioExistente).CurrentValues.SetValues(usuario);
         await _context.SaveChangesAsync();
     }
@@ -54,7 +59,9 @@ public class UsuariosRepositorio : IUsuariosRepositorio
         var usuario = await _context.Usuarios.FindAsync(id);
         if (usuario != null)
         {
-            _context.Usuarios.Remove(usuario);
+            // Baja lógica: nunca se borra físicamente, para no perder la
+            // trazabilidad de facturas/turnos/trabajos que ya lo referencian.
+            usuario.Activo = false;
             await _context.SaveChangesAsync();
         }
     }

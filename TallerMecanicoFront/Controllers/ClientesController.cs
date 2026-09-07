@@ -69,6 +69,25 @@ public class ClientesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // Vista de solo lectura: es la que se ofrece en vez de "Editar" cuando
+    // el registro está dado de baja (Activo = false).
+    public async Task<IActionResult> Details(int id)
+    {
+        var response = await _httpClient.GetAsync($"api/clientes/{id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            return NotFound();
+        }
+
+        var cliente = await response.Content.ReadFromJsonAsync<Cliente>();
+        if (cliente is null)
+        {
+            return NotFound();
+        }
+
+        return View(cliente);
+    }
+
     public async Task<IActionResult> Edit(int id)
     {
         var response = await _httpClient.GetAsync($"api/clientes/{id}");

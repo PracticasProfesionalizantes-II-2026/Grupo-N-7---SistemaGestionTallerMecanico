@@ -31,6 +31,12 @@ public class PersonasRepositorio : IPersonasRepositorio
 
     public async Task UpdatePersonaAsync(Persona persona)
     {
+        var existente = await _context.Personas.AsNoTracking().FirstOrDefaultAsync(x => x.Id == persona.Id);
+        if (existente is not null && !existente.Activo)
+        {
+            throw new InvalidOperationException("No se puede editar una persona dada de baja.");
+        }
+
         _context.DetachTrackedEntity(persona);
         _context.Personas.Update(persona);
         await _context.SaveChangesAsync();
@@ -41,7 +47,9 @@ public class PersonasRepositorio : IPersonasRepositorio
         var persona = await _context.Personas.FindAsync(id);
         if (persona != null)
         {
-            _context.Personas.Remove(persona);
+            // Baja lógica: nunca se borra físicamente, para no perder la
+            // trazabilidad de facturas/turnos/trabajos que ya lo referencian.
+            persona.Activo = false;
             await _context.SaveChangesAsync();
         }
     }

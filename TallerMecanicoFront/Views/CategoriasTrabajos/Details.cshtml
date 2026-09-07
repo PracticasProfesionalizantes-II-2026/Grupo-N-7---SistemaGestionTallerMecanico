@@ -1,0 +1,16 @@
+@model TallerMecanicoFront.Models.CategoriaTrabajo
+@{
+    ViewData["Title"] = "Detalle de Categoría de Trabajo";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Detalle de Categoría de Trabajo</h1>
+    <span class="badge @(Model.Activo ? "bg-success" : "bg-secondary")">@(Model.Activo ? "Activo" : "Dado de baja")</span>
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">Categoría</dt>
+    <dd class="col-sm-9">@Model.Categoria</dd>
+</dl>
+
+<a asp-action="Index" class="btn btn-secondary">Volver</a>

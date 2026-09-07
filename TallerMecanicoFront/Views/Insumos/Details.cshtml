@@ -1,0 +1,34 @@
+@model TallerMecanicoFront.Models.Insumo
+@{
+    ViewData["Title"] = "Detalle del Insumo";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Detalle del Insumo</h1>
+    <span class="badge @(Model.Activo ? "bg-success" : "bg-secondary")">@(Model.Activo ? "Activo" : "Dado de baja")</span>
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">Nombre</dt>
+    <dd class="col-sm-9">@Model.Nombre</dd>
+
+    <dt class="col-sm-3">Marca</dt>
+    <dd class="col-sm-9">@Model.Marca</dd>
+
+    <dt class="col-sm-3">Descripción</dt>
+    <dd class="col-sm-9">@(string.IsNullOrWhiteSpace(Model.Descripcion) ? "—" : Model.Descripcion)</dd>
+
+    <dt class="col-sm-3">Proveedor (Id)</dt>
+    <dd class="col-sm-9">@Model.IdProveedor</dd>
+
+    <dt class="col-sm-3">Stock</dt>
+    <dd class="col-sm-9">@Model.Stock</dd>
+
+    <dt class="col-sm-3">Precio de compra</dt>
+    <dd class="col-sm-9">$@Model.PrecioCompra.ToString("0.00")</dd>
+
+    <dt class="col-sm-3">Precio de venta</dt>
+    <dd class="col-sm-9">$@Model.PrecioVenta.ToString("0.00")</dd>
+</dl>
+
+<a asp-action="Index" class="btn btn-secondary">Volver</a>

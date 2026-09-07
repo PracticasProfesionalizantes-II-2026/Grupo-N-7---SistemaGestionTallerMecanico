@@ -69,6 +69,25 @@ public class ProveedoresController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // Vista de solo lectura: es la que se ofrece en vez de "Editar" cuando
+    // el registro está dado de baja (Activo = false).
+    public async Task<IActionResult> Details(int id)
+    {
+        var response = await _httpClient.GetAsync($"api/proveedores/{id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            return NotFound();
+        }
+
+        var proveedor = await response.Content.ReadFromJsonAsync<Proveedor>();
+        if (proveedor is null)
+        {
+            return NotFound();
+        }
+
+        return View(proveedor);
+    }
+
     public async Task<IActionResult> Edit(int id)
     {
         var response = await _httpClient.GetAsync($"api/proveedores/{id}");

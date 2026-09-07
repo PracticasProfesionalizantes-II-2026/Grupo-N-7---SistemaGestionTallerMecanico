@@ -31,6 +31,12 @@ public class TrabajosRepositorio : ITrabajosRepositorio
 
     public async Task UpdateTrabajoAsync(Trabajo trabajo)
     {
+        var existente = await _context.Trabajos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == trabajo.Id);
+        if (existente is not null && !existente.Activo)
+        {
+            throw new InvalidOperationException("No se puede editar un trabajo dado de baja.");
+        }
+
         _context.DetachTrackedEntity(trabajo);
         _context.Trabajos.Update(trabajo);
         await _context.SaveChangesAsync();
@@ -41,7 +47,9 @@ public class TrabajosRepositorio : ITrabajosRepositorio
         var trabajo = await _context.Trabajos.FindAsync(id);
         if (trabajo != null)
         {
-            _context.Trabajos.Remove(trabajo);
+            // Baja lógica: nunca se borra físicamente, para no perder la
+            // trazabilidad de facturas/turnos/trabajos que ya lo referencian.
+            trabajo.Activo = false;
             await _context.SaveChangesAsync();
         }
     }

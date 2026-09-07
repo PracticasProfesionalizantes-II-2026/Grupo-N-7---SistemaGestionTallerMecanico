@@ -31,6 +31,12 @@ public class ProveedoresRepositorio : IProveedoresRepositorio
 
     public async Task UpdateProveedorAsync(Proveedor proveedor)
     {
+        var existente = await _context.Proveedores.AsNoTracking().FirstOrDefaultAsync(x => x.Id == proveedor.Id);
+        if (existente is not null && !existente.Activo)
+        {
+            throw new InvalidOperationException("No se puede editar un proveedor dado de baja.");
+        }
+
         _context.DetachTrackedEntity(proveedor);
         _context.Proveedores.Update(proveedor);
         await _context.SaveChangesAsync();
@@ -41,7 +47,9 @@ public class ProveedoresRepositorio : IProveedoresRepositorio
         var proveedor = await _context.Proveedores.FindAsync(id);
         if (proveedor != null)
         {
-            _context.Proveedores.Remove(proveedor);
+            // Baja lógica: nunca se borra físicamente, para no perder la
+            // trazabilidad de facturas/turnos/trabajos que ya lo referencian.
+            proveedor.Activo = false;
             await _context.SaveChangesAsync();
         }
     }
