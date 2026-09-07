@@ -1,0 +1,40 @@
+@model TallerMecanicoFront.Models.Usuario
+@{
+    ViewData["Title"] = "Detalle del Usuario";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Detalle del Usuario</h1>
+    <span class="badge @(Model.Activo ? "bg-success" : "bg-secondary")">@(Model.Activo ? "Activo" : "Dado de baja")</span>
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">Nombre</dt>
+    <dd class="col-sm-9">@Model.Nombre</dd>
+
+    <dt class="col-sm-3">Apellido</dt>
+    <dd class="col-sm-9">@Model.Apellido</dd>
+
+    <dt class="col-sm-3">Domicilio</dt>
+    <dd class="col-sm-9">@Model.Domicilio</dd>
+
+    <dt class="col-sm-3">Localidad (Id)</dt>
+    <dd class="col-sm-9">@Model.IdLocalidad</dd>
+
+    <dt class="col-sm-3">Teléfono</dt>
+    <dd class="col-sm-9">@(Model.Telefono ?? "—")</dd>
+
+    <dt class="col-sm-3">Correo</dt>
+    <dd class="col-sm-9">@Model.Correo</dd>
+
+    <dt class="col-sm-3">DNI</dt>
+    <dd class="col-sm-9">@Model.Dni</dd>
+
+    <dt class="col-sm-3">Fecha de nacimiento</dt>
+    <dd class="col-sm-9">@(Model.FechaNacimiento?.ToString("dd/MM/yyyy") ?? "—")</dd>
+
+    <dt class="col-sm-3">Rol</dt>
+    <dd class="col-sm-9">@Model.NombreRol</dd>
+</dl>
+
+<a asp-action="Index" class="btn btn-secondary">Volver</a>

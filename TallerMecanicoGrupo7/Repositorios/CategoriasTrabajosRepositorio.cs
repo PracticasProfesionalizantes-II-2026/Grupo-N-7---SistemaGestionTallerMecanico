@@ -31,6 +31,12 @@ public class CategoriasTrabajosRepositorio : ICategoriasTrabajosRepositorio
 
     public async Task UpdateCategoriaAsync(CategoriaTrabajo categoria)
     {
+        var existente = await _context.CategoriasTrabajos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == categoria.Id);
+        if (existente is not null && !existente.Activo)
+        {
+            throw new InvalidOperationException("No se puede editar una categoría de trabajo dada de baja.");
+        }
+
         _context.DetachTrackedEntity(categoria);
         _context.CategoriasTrabajos.Update(categoria);
         await _context.SaveChangesAsync();
@@ -41,7 +47,9 @@ public class CategoriasTrabajosRepositorio : ICategoriasTrabajosRepositorio
         var categoria = await _context.CategoriasTrabajos.FindAsync(id);
         if (categoria != null)
         {
-            _context.CategoriasTrabajos.Remove(categoria);
+            // Baja lógica: nunca se borra físicamente, para no perder la
+            // trazabilidad de facturas/turnos/trabajos que ya lo referencian.
+            categoria.Activo = false;
             await _context.SaveChangesAsync();
         }
     }

@@ -55,6 +55,25 @@ public class PersonasController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // Vista de solo lectura: es la que se ofrece en vez de "Editar" cuando
+    // el registro está dado de baja (Activo = false).
+    public async Task<IActionResult> Details(int id)
+    {
+        var response = await _httpClient.GetAsync($"api/personas/{id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            return NotFound();
+        }
+
+        var persona = await response.Content.ReadFromJsonAsync<Persona>();
+        if (persona is null)
+        {
+            return NotFound();
+        }
+
+        return View(persona);
+    }
+
     public async Task<IActionResult> Edit(int id)
     {
         var response = await _httpClient.GetAsync($"api/personas/{id}");

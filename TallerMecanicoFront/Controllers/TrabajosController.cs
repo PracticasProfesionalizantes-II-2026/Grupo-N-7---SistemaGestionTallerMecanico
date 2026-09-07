@@ -54,6 +54,25 @@ public class TrabajosController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // Vista de solo lectura: es la que se ofrece en vez de "Editar" cuando
+    // el registro está dado de baja (Activo = false).
+    public async Task<IActionResult> Details(int id)
+    {
+        var response = await _httpClient.GetAsync($"api/trabajos/{id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            return NotFound();
+        }
+
+        var trabajo = await response.Content.ReadFromJsonAsync<Trabajo>();
+        if (trabajo is null)
+        {
+            return NotFound();
+        }
+
+        return View(trabajo);
+    }
+
     public async Task<IActionResult> Edit(int id)
     {
         var response = await _httpClient.GetAsync($"api/trabajos/{id}");
