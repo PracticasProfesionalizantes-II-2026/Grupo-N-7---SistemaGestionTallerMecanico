@@ -23,18 +23,6 @@ public class FacturasVentasController : Controller
         }
 
         var facturas = await response.Content.ReadFromJsonAsync<List<FacturaVenta>>() ?? new List<FacturaVenta>();
-        var detallesResponse = await _httpClient.GetAsync("api/detalles-facturas-ventas");
-        if (detallesResponse.IsSuccessStatusCode)
-        {
-            var detalles = await detallesResponse.Content.ReadFromJsonAsync<List<DetalleFacturaVenta>>() ?? new List<DetalleFacturaVenta>();
-            foreach (var factura in facturas)
-            {
-                factura.TotalFactura = Math.Round(
-                    detalles.Where(x => x.IdFactura == factura.Id).Sum(x => x.TotalDetalle),
-                    2,
-                    MidpointRounding.AwayFromZero);
-            }
-        }
         return View(facturas);
     }
 
@@ -84,7 +72,7 @@ public class FacturasVentasController : Controller
         var facturaCreada = await response.Content.ReadFromJsonAsync<FacturaVenta>();
         return facturaCreada is null
             ? RedirectToAction(nameof(Index))
-            : RedirectToAction("Create", "DetallesFacturasVentas", new { facturaId = facturaCreada.Id });
+            : RedirectToAction("Index", "DetallesFacturasVentas", new { facturaId = facturaCreada.Id });
     }
 
     public async Task<IActionResult> Edit(int id)
@@ -218,17 +206,14 @@ public class FacturasVentasController : Controller
 
     private async Task<decimal> CalcularTotalAsync(int facturaId)
     {
-        var response = await _httpClient.GetAsync("api/detalles-facturas-ventas");
+        var response = await _httpClient.GetAsync($"api/facturas-ventas/{facturaId}/detalle");
         if (!response.IsSuccessStatusCode)
         {
             return 0;
         }
 
-        var detalles = await response.Content.ReadFromJsonAsync<List<DetalleFacturaVenta>>() ?? new List<DetalleFacturaVenta>();
-        return Math.Round(
-            detalles.Where(x => x.IdFactura == facturaId).Sum(x => x.TotalDetalle),
-            2,
-            MidpointRounding.AwayFromZero);
+        var detalle = await response.Content.ReadFromJsonAsync<FacturaVentaDetalle>();
+        return detalle?.TotalFactura ?? 0;
     }
 
     private async Task ValidarTurnoDisponibleAsync(int turnoId, int? facturaId = null)

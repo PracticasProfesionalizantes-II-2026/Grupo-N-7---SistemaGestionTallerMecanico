@@ -18,6 +18,12 @@ public static class FacturasVentasEndpoint
             return facturaVenta is not null ? Results.Ok(facturaVenta.ToReadDto()) : Results.NotFound();
         });
 
+        app.MapGet("/api/facturas-ventas/{id}/detalle", async (int id, IFacturasVentasLogica logica) =>
+        {
+            var detalle = await logica.GetDetalleFacturaVentaAsync(id);
+            return detalle is not null ? Results.Ok(detalle) : Results.NotFound();
+        });
+
         app.MapPost("/api/facturas-ventas", async (FacturaVentaWriteDto facturaVenta, IFacturasVentasLogica logica) =>
         {
             var errorValidacion = facturaVenta.Validar();

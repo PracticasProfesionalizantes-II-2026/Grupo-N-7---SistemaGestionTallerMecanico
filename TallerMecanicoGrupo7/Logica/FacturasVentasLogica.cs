@@ -1,4 +1,5 @@
 using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Dtos;
 using ClasesTallerMecanico.Repositorios;
 
 namespace ClasesTallerMecanico.Logica;
@@ -20,6 +21,11 @@ public class FacturasVentasLogica : IFacturasVentasLogica
     public Task<FacturaVenta> GetFacturaVentaByIdAsync(int id)
     {
         return _facturasVentasRepositorio.GetFacturaVentaByIdAsync(id);
+    }
+
+    public Task<FacturaVentaDetalleReadDto?> GetDetalleFacturaVentaAsync(int id)
+    {
+        return _facturasVentasRepositorio.GetDetalleFacturaVentaAsync(id);
     }
 
     public Task AddFacturaVentaAsync(FacturaVenta facturaVenta)

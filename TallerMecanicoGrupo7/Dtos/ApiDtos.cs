@@ -553,6 +553,25 @@ public class DetalleFacturaVentaWriteDto
     public decimal CostoUnitarioInsumoHistorico { get; set; }
 }
 
+public class FacturaVentaDetalleReadDto
+{
+    public int IdFactura { get; set; }
+    public int IdTurno { get; set; }
+    public decimal TotalManoObra { get; set; }
+    public List<InsumoFacturaVentaReadDto> Insumos { get; set; } = new();
+    public decimal TotalFactura { get; set; }
+}
+
+public class InsumoFacturaVentaReadDto
+{
+    public int IdInsumo { get; set; }
+    public string NombreInsumo { get; set; } = string.Empty;
+    public string Marca { get; set; } = string.Empty;
+    public decimal Cantidad { get; set; }
+    public decimal PrecioUnitario { get; set; }
+    public decimal Total { get; set; }
+}
+
 public class SesionCajaReadDto
 {
     public int Id { get; set; }

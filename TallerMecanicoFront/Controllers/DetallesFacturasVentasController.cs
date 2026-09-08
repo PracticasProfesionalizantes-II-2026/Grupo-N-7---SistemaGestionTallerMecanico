@@ -13,17 +13,28 @@ public class DetallesFacturasVentasController : Controller
         _httpClient = httpClientFactory.CreateClient("TallerApi");
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int? facturaId)
     {
-        var response = await _httpClient.GetAsync("api/detalles-facturas-ventas");
-        if (!response.IsSuccessStatusCode)
+        if (!facturaId.HasValue || facturaId.Value <= 0)
         {
-            ModelState.AddModelError(string.Empty, "No se pudieron obtener los detalles de facturas de venta desde la API.");
-            return View(new List<DetalleFacturaVenta>());
+            return RedirectToAction("Index", "FacturasVentas");
         }
 
-        var detalles = await response.Content.ReadFromJsonAsync<List<DetalleFacturaVenta>>() ?? new List<DetalleFacturaVenta>();
-        return View(detalles);
+        var response = await _httpClient.GetAsync($"api/facturas-ventas/{facturaId.Value}/detalle");
+        if (!response.IsSuccessStatusCode)
+        {
+            return NotFound();
+        }
+
+        var detalle = await response.Content.ReadFromJsonAsync<FacturaVentaDetalle>();
+        var factura = await ObtenerFacturaAsync(facturaId.Value);
+        if (detalle is null || factura is null)
+        {
+            return NotFound();
+        }
+
+        ViewBag.Factura = factura;
+        return View(detalle);
     }
 
     public async Task<IActionResult> Create(int? facturaId)
