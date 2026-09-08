@@ -54,8 +54,7 @@
                     </a>
                     <div class="collapse" id="menuTrabajos">
                         <a class="nav-link" asp-controller="CategoriasTrabajos" asp-action="Index">Categorías de Trabajo</a>
-                        <a class="nav-link" asp-controller="Trabajos" asp-action="Index">Trabajos</a>
-                        <a class="nav-link" asp-controller="InsumosPorTrabajo" asp-action="Index">Insumos por Trabajo</a>
+                        <a class="nav-link" asp-controller="Trabajos" asp-action="Index">Tipos de Trabajo</a>
                         <a class="nav-link" asp-controller="Maquinas" asp-action="Index">Máquinas</a>
                         <a class="nav-link" asp-controller="Insumos" asp-action="Index">Insumos</a>
                     </div>
@@ -64,11 +63,12 @@
                         <i class="bi bi-calendar3"></i> Turnos
                     </a>
                     <div class="collapse" id="menuTurnos">
-                        <a class="nav-link" asp-controller="Turnos" asp-action="Index">Turnos</a>
                         <a class="nav-link" asp-controller="TiposTurno" asp-action="Index">Tipos de Turno</a>
                         <a class="nav-link" asp-controller="EstadosTurno" asp-action="Index">Estados de Turno</a>
-                        <a class="nav-link" asp-controller="TrabajosPorTurno" asp-action="Index">Trabajos por Turno</a>
+                        <a class="nav-link" asp-controller="Turnos" asp-action="Index">Turnos</a>
                         <a class="nav-link" asp-controller="DetallesTurnos" asp-action="Index">Detalles de Turno</a>
+                        <a class="nav-link" asp-controller="TrabajosPorTurno" asp-action="Index">Mano de obra por Turno</a>
+                        <a class="nav-link" asp-controller="InsumosPorTrabajo" asp-action="Index">Insumos por Turno</a>
                     </div>
 
                     <a class="nav-link dropdown-toggle" data-bs-toggle="collapse" href="#menuFacturas" role="button" aria-expanded="false">
