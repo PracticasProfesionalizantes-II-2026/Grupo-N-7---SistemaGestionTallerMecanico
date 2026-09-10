@@ -35,7 +35,7 @@ public class DetallesTurnosController : Controller
         return View(detalles);
     }
 
-    public async Task<IActionResult> Create(int? turnoId)
+    public async Task<IActionResult> Create(int? turnoId, string? returnUrl = null)
     {
         if (!turnoId.HasValue || turnoId.Value <= 0)
         {
@@ -48,14 +48,16 @@ public class DetallesTurnosController : Controller
             return RedirectToAction("Index", "Turnos");
         }
 
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         await CargarOpcionesAsync();
         return View(new DetalleTurno { IdTurno = turnoId.Value });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(DetalleTurno detalleTurno)
+    public async Task<IActionResult> Create(DetalleTurno detalleTurno, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         if (await TurnoEstaCerradoAsync(detalleTurno.IdTurno))
         {
             TempData["Error"] = "No se pueden agregar detalles a un turno finalizado.";
@@ -64,6 +66,7 @@ public class DetallesTurnosController : Controller
 
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(detalleTurno);
         }
@@ -73,14 +76,17 @@ public class DetallesTurnosController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo crear el detalle de turno. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(detalleTurno);
         }
 
-        return RedirectToAction("Gestionar", "Turnos", new { id = detalleTurno.IdTurno });
+        return returnUrl is null
+            ? RedirectToAction("Gestionar", "Turnos", new { id = detalleTurno.IdTurno })
+            : Redirect(returnUrl);
     }
 
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(int id, string? returnUrl = null)
     {
         var response = await _httpClient.GetAsync($"api/detalles-turnos/{id}");
         if (!response.IsSuccessStatusCode)
@@ -100,14 +106,16 @@ public class DetallesTurnosController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         await CargarOpcionesAsync();
         return View(detalleTurno);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, DetalleTurno detalleTurno)
+    public async Task<IActionResult> Edit(int id, DetalleTurno detalleTurno, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         if (id != detalleTurno.Id)
         {
             return BadRequest();
@@ -121,6 +129,7 @@ public class DetallesTurnosController : Controller
 
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(detalleTurno);
         }
@@ -130,11 +139,14 @@ public class DetallesTurnosController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo actualizar el detalle de turno. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(detalleTurno);
         }
 
-        return RedirectToAction("Gestionar", "Turnos", new { id = detalleTurno.IdTurno });
+        return returnUrl is null
+            ? RedirectToAction("Gestionar", "Turnos", new { id = detalleTurno.IdTurno })
+            : Redirect(returnUrl);
     }
 
     [HttpPost]
@@ -177,6 +189,13 @@ public class DetallesTurnosController : Controller
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los turnos.");
         if (!localidadesResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar las localidades.");
+    }
+
+    private string? ObtenerReturnUrlLocal(string? returnUrl)
+    {
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? returnUrl
+            : null;
     }
 
     private async Task<bool> TurnoEstaCerradoAsync(int turnoId)

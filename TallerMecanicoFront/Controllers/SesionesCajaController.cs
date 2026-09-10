@@ -26,16 +26,18 @@ public class SesionesCajaController : Controller
         return View(sesionesCaja);
     }
 
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         await CargarOpcionesAsync();
         return View(new SesionCaja());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(SesionCaja sesionCaja)
+    public async Task<IActionResult> Create(SesionCaja sesionCaja, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         if (sesionCaja is null)
         {
             return BadRequest();
@@ -48,6 +50,7 @@ public class SesionesCajaController : Controller
 
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(sesionCaja);
         }
@@ -57,11 +60,12 @@ public class SesionesCajaController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo crear la sesión de caja. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(sesionCaja);
         }
 
-        return RedirectToAction(nameof(Index));
+        return returnUrl is null ? RedirectToAction(nameof(Index)) : Redirect(returnUrl);
     }
 
     public async Task<IActionResult> Edit(int id)
@@ -169,5 +173,12 @@ public class SesionesCajaController : Controller
 
         if (!usuariosResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los usuarios.");
+    }
+
+    private string? ObtenerReturnUrlLocal(string? returnUrl)
+    {
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? returnUrl
+            : null;
     }
 }

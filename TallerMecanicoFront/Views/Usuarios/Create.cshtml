@@ -26,7 +26,7 @@
                         <div class="col-md-6"><label asp-for="ContraseñaHash" class="form-label">Contraseña</label><input asp-for="ContraseñaHash" type="password" class="form-control" minlength="5" maxlength="255" required /><span asp-validation-for="ContraseñaHash" class="text-danger"></span></div>
                     </div>
                     <input type="hidden" asp-for="Activo" value="true" />
-                    <div class="d-flex gap-2"><button type="submit" class="btn btn-primary">Guardar</button><a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a></div>
+                    <div class="d-flex justify-content-center gap-5 mt-5"><button type="submit" class="btn btn-success">Guardar</button><a asp-action="Index" class="btn btn-danger">Cancelar</a></div>
                 </form>
             </div>
         </div>

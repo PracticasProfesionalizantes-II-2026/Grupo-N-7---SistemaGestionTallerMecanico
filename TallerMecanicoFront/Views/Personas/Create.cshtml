@@ -12,6 +12,7 @@
             <div class="card-body p-4">
                 <h1 class="h4 mb-4">Nueva Persona</h1>
                 <form asp-action="Create" method="post">
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                     <div class="row g-3">
                         <div class="col-md-4">
@@ -40,13 +41,16 @@
                         </div>
                         <div class="col-md-4">
                             <label asp-for="IdLocalidad" class="form-label">Localidad</label>
-                            <select asp-for="IdLocalidad" class="form-select" required>
-                                <option value="">Seleccione una localidad</option>
-                                @foreach (var localidad in localidades)
-                                {
-                                    <option value="@localidad.Id">@localidad.Nombre - @localidad.Provincia</option>
-                                }
-                            </select>
+                            <div class="input-group">
+                                <select asp-for="IdLocalidad" class="form-select" required>
+                                    <option value="">Seleccione una localidad</option>
+                                    @foreach (var localidad in localidades)
+                                    {
+                                        <option value="@localidad.Id">@localidad.Nombre - @localidad.Provincia</option>
+                                    }
+                                </select>
+                                <a asp-controller="Localidades" asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary" title="Agregar localidad">Nueva</a>
+                            </div>
                             <span asp-validation-for="IdLocalidad" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">
@@ -79,13 +83,16 @@
                         </div>
                         <div class="col-md-6 campos-usuario">
                             <label asp-for="IdRol" class="form-label">Rol</label>
-                            <select asp-for="IdRol" class="form-select">
-                                <option value="">Seleccione un rol</option>
-                                @foreach (var rol in roles)
-                                {
-                                    <option value="@rol.Id">@rol.Nombre</option>
-                                }
-                            </select>
+                            <div class="input-group">
+                                <select asp-for="IdRol" class="form-select">
+                                    <option value="">Seleccione un rol</option>
+                                    @foreach (var rol in roles)
+                                    {
+                                        <option value="@rol.Id">@rol.Nombre</option>
+                                    }
+                                </select>
+                                <a asp-controller="Roles" asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary" title="Agregar rol">Nuevo</a>
+                            </div>
                             <span asp-validation-for="IdRol" class="text-danger"></span>
                         </div>
                         <div class="col-md-6 campos-usuario">
@@ -97,9 +104,16 @@
                     <div class="form-check mt-4 mb-4">
                         <input type="hidden" asp-for="Activo" value="true" />
                     </div>
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                    <div class="d-flex justify-content-center gap-5 mt-5">
+                        <button type="submit" class="btn btn-success">Guardar</button>
+                        @if (ViewData["ReturnUrl"] is string returnUrl)
+                        {
+                            <a href="@returnUrl" class="btn btn-danger">Cancelar</a>
+                        }
+                        else
+                        {
+                            <a asp-action="Index" class="btn btn-danger">Cancelar</a>
+                        }
                     </div>
                 </form>
             </div>

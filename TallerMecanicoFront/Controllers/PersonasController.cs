@@ -26,19 +26,22 @@ public class PersonasController : Controller
         return View(personas);
     }
 
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         await CargarOpcionesAsync();
         return View(new Persona());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Persona persona)
+    public async Task<IActionResult> Create(Persona persona, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         ValidarCamposEspecificos(persona);
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(persona);
         }
@@ -48,11 +51,12 @@ public class PersonasController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo crear la persona. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(persona);
         }
 
-        return RedirectToAction(nameof(Index));
+        return returnUrl is null ? RedirectToAction(nameof(Index)) : Redirect(returnUrl);
     }
 
     // Vista de solo lectura: es la que se ofrece en vez de "Editar" cuando
@@ -74,7 +78,7 @@ public class PersonasController : Controller
         return View(persona);
     }
 
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(int id, string? returnUrl = null)
     {
         var response = await _httpClient.GetAsync($"api/personas/{id}");
         if (!response.IsSuccessStatusCode)
@@ -88,14 +92,16 @@ public class PersonasController : Controller
             return NotFound();
         }
 
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         await CargarOpcionesAsync();
         return View(persona);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, Persona persona)
+    public async Task<IActionResult> Edit(int id, Persona persona, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         if (id != persona.Id)
         {
             return BadRequest();
@@ -104,6 +110,7 @@ public class PersonasController : Controller
         ValidarCamposEspecificos(persona);
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(persona);
         }
@@ -113,11 +120,12 @@ public class PersonasController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo actualizar la persona. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(persona);
         }
 
-        return RedirectToAction(nameof(Index));
+        return returnUrl is null ? RedirectToAction(nameof(Index)) : Redirect(returnUrl);
     }
 
     [HttpPost]
@@ -153,6 +161,13 @@ public class PersonasController : Controller
             persona.IdRol,
             persona.ContraseñaHash
         };
+    }
+
+    private string? ObtenerReturnUrlLocal(string? returnUrl)
+    {
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? returnUrl
+            : null;
     }
 
     private void ValidarCamposEspecificos(Persona persona)

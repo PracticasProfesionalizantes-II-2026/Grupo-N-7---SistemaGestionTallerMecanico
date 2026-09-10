@@ -26,8 +26,9 @@ public class InsumosController : Controller
         return View(insumos);
     }
 
-    public async Task<IActionResult> Create(int? facturaId)
+    public async Task<IActionResult> Create(int? facturaId, string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         await CargarOpcionesAsync();
         ViewBag.FacturaCompraId = facturaId;
         return View(new Insumo());
@@ -35,10 +36,12 @@ public class InsumosController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Insumo insumo, int? facturaId)
+    public async Task<IActionResult> Create(Insumo insumo, int? facturaId, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             ViewBag.FacturaCompraId = facturaId;
             return View(insumo);
@@ -49,6 +52,7 @@ public class InsumosController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo crear el insumo. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             ViewBag.FacturaCompraId = facturaId;
             return View(insumo);
@@ -56,10 +60,15 @@ public class InsumosController : Controller
 
         if (facturaId.HasValue && facturaId.Value > 0)
         {
+            if (returnUrl is not null)
+            {
+                return Redirect(returnUrl);
+            }
+
             return RedirectToAction("Create", "DetallesFacturasCompras", new { facturaId = facturaId.Value });
         }
 
-        return RedirectToAction(nameof(Index));
+        return returnUrl is null ? RedirectToAction(nameof(Index)) : Redirect(returnUrl);
     }
 
     // Vista de solo lectura: es la que se ofrece en vez de "Editar" cuando
@@ -149,5 +158,12 @@ public class InsumosController : Controller
 
         if (!proveedoresResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los proveedores.");
+    }
+
+    private string? ObtenerReturnUrlLocal(string? returnUrl)
+    {
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? returnUrl
+            : null;
     }
 }
