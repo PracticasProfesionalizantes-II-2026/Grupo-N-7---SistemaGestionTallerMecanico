@@ -26,18 +26,21 @@ public class ProveedoresController : Controller
         return View(proveedores);
     }
 
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         await CargarLocalidadesAsync();
         return View(new Proveedor());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Proveedor proveedor)
+    public async Task<IActionResult> Create(Proveedor proveedor, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarLocalidadesAsync();
             return View(proveedor);
         }
@@ -62,11 +65,12 @@ public class ProveedoresController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo crear el proveedor. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarLocalidadesAsync();
             return View(proveedor);
         }
 
-        return RedirectToAction(nameof(Index));
+        return returnUrl is null ? RedirectToAction(nameof(Index)) : Redirect(returnUrl);
     }
 
     // Vista de solo lectura: es la que se ofrece en vez de "Editar" cuando
@@ -173,5 +177,12 @@ public class ProveedoresController : Controller
             ViewBag.Localidades = new List<Localidad>();
             ModelState.AddModelError(string.Empty, "No se pudieron cargar las localidades.");
         }
+    }
+
+    private string? ObtenerReturnUrlLocal(string? returnUrl)
+    {
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? returnUrl
+            : null;
     }
 }

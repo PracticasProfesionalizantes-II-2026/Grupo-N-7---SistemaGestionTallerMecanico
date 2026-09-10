@@ -26,17 +26,20 @@ public class EstadosTurnoController : Controller
         return View(estados);
     }
 
-    public IActionResult Create()
+    public IActionResult Create(string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         return View();
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(EstadoTurno estadoTurno)
+    public async Task<IActionResult> Create(EstadoTurno estadoTurno, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             return View(estadoTurno);
         }
 
@@ -51,10 +54,18 @@ public class EstadosTurnoController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo crear el estado de turno. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             return View(estadoTurno);
         }
 
-        return RedirectToAction(nameof(Index));
+        return returnUrl is null ? RedirectToAction(nameof(Index)) : Redirect(returnUrl);
+    }
+
+    private string? ObtenerReturnUrlLocal(string? returnUrl)
+    {
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? returnUrl
+            : null;
     }
 
     public async Task<IActionResult> Edit(int id)

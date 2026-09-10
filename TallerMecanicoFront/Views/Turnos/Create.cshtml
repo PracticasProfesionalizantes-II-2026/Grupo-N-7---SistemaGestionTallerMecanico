@@ -15,54 +15,67 @@
                 <h1 class="h4 mb-4">Nuevo Turno</h1>
 
                 <form asp-action="Create" method="post">
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label asp-for="IdCliente" class="form-label">Cliente</label>
-                            <select asp-for="IdCliente" class="form-select" id="selectCliente" required>
-                                <option value="">Seleccione un cliente</option>
-                                @foreach (var cliente in clientes)
-                                {
-                                    <option value="@cliente.Id">@cliente.Apellido, @cliente.Nombre</option>
-                                }
-                            </select>
+                            <div class="input-group">
+                                <select asp-for="IdCliente" class="form-select" id="selectCliente" required>
+                                    <option value="">Seleccione un cliente</option>
+                                    @foreach (var cliente in clientes)
+                                    {
+                                        <option value="@cliente.Id">@cliente.Apellido, @cliente.Nombre</option>
+                                    }
+                                </select>
+                                <a asp-controller="Clientes" asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary" title="Agregar cliente">Nuevo</a>
+                            </div>
                             <span asp-validation-for="IdCliente" class="text-danger"></span>
                         </div>
 
                         <div class="col-md-6">
                             <label asp-for="IdMaquina" class="form-label">Máquina</label>
-                            <select asp-for="IdMaquina" class="form-select" id="selectMaquina" required>
-                                <option value="">Seleccione primero un cliente</option>
-                                @foreach (var maquina in maquinas)
-                                {
-                                    <option value="@maquina.Id" data-cliente="@maquina.IdCliente">@maquina.Nombre - @maquina.Marca - @maquina.Patente</option>
-                                }
-                            </select>
+                            <div class="input-group">
+                                <select asp-for="IdMaquina" class="form-select" id="selectMaquina" required>
+                                    <option value="">Seleccione primero un cliente</option>
+                                    @foreach (var maquina in maquinas)
+                                    {
+                                        <option value="@maquina.Id" data-cliente="@maquina.IdCliente">@maquina.Nombre - @maquina.Marca - @maquina.Patente</option>
+                                    }
+                                </select>
+                                <a asp-controller="Maquinas" asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary" title="Agregar máquina">Nueva</a>
+                            </div>
                             <span asp-validation-for="IdMaquina" class="text-danger"></span>
                         </div>
 
                         <div class="col-md-6">
                             <label asp-for="IdTipoTurno" class="form-label">Tipo de turno</label>
-                            <select asp-for="IdTipoTurno" class="form-select">
-                                <option value="">Seleccione un tipo</option>
-                                @foreach (var tipo in tiposTurno)
-                                {
-                                    <option value="@tipo.Id">@tipo.Nombre</option>
-                                }
-                            </select>
+                            <div class="input-group">
+                                <select asp-for="IdTipoTurno" class="form-select">
+                                    <option value="">Seleccione un tipo</option>
+                                    @foreach (var tipo in tiposTurno)
+                                    {
+                                        <option value="@tipo.Id">@tipo.Nombre</option>
+                                    }
+                                </select>
+                                <a asp-controller="TiposTurno" asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary" title="Agregar tipo de turno">Nuevo</a>
+                            </div>
                             <span asp-validation-for="IdTipoTurno" class="text-danger"></span>
                         </div>
 
                         <div class="col-md-6">
                             <label asp-for="IdEstado" class="form-label">Estado</label>
-                            <select asp-for="IdEstado" class="form-select">
-                                <option value="">Seleccione un estado</option>
-                                @foreach (var estado in estadosTurno)
-                                {
-                                    <option value="@estado.Id">@estado.Nombre</option>
-                                }
-                            </select>
+                            <div class="input-group">
+                                <select asp-for="IdEstado" class="form-select">
+                                    <option value="">Seleccione un estado</option>
+                                    @foreach (var estado in estadosTurno)
+                                    {
+                                        <option value="@estado.Id">@estado.Nombre</option>
+                                    }
+                                </select>
+                                <a asp-controller="EstadosTurno" asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary" title="Agregar estado de turno">Nuevo</a>
+                            </div>
                             <span asp-validation-for="IdEstado" class="text-danger"></span>
                         </div>
 
@@ -79,9 +92,9 @@
                         </div>
                     </div>
 
-                    <div class="d-flex gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                    <div class="d-flex justify-content-center gap-5 mt-5">
+                        <button type="submit" class="btn btn-success">Guardar</button>
+                        <a asp-action="Index" class="btn btn-danger">Cancelar</a>
                     </div>
                 </form>
             </div>

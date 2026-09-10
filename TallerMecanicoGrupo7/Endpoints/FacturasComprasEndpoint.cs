@@ -42,6 +42,9 @@ public static class FacturasComprasEndpoint
             if (existingFacturaCompra is null)
                 return Results.NotFound();
 
+            if (existingFacturaCompra.Pagado)
+                return Results.Conflict(new { message = "La factura de compra está pagada y no puede editarse." });
+
             await logica.UpdateFacturaCompraAsync(facturaCompra.ToEntity());
             return Results.NoContent();
         });
@@ -51,6 +54,9 @@ public static class FacturasComprasEndpoint
             var existingFacturaCompra = await logica.GetFacturaCompraByIdAsync(id);
             if (existingFacturaCompra is null)
                 return Results.NotFound();
+
+            if (existingFacturaCompra.Pagado)
+                return Results.Conflict(new { message = "La factura de compra está pagada y no puede eliminarse." });
 
             await logica.DeleteFacturaCompraAsync(id);
             return Results.NoContent();

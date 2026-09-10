@@ -23,6 +23,15 @@ public class TrabajosPorTurnoController : Controller
         }
 
         var trabajos = await response.Content.ReadFromJsonAsync<List<TrabajoPorTurno>>() ?? new List<TrabajoPorTurno>();
+        var turnosBloqueados = new HashSet<int>();
+        foreach (var trabajo in trabajos)
+        {
+            if (await TurnoEstaCerradoAsync(trabajo.IdTurno))
+            {
+                turnosBloqueados.Add(trabajo.IdTurno);
+            }
+        }
+        ViewBag.TurnosBloqueados = turnosBloqueados;
         return View(trabajos);
     }
 
@@ -68,7 +77,7 @@ public class TrabajosPorTurnoController : Controller
             return View(trabajoPorTurno);
         }
 
-        return RedirectToAction("Index", "Turnos");
+        return RedirectToAction("Gestionar", "Turnos", new { id = trabajoPorTurno.IdTurno });
     }
 
     public async Task<IActionResult> Edit(int id)
@@ -135,15 +144,26 @@ public class TrabajosPorTurnoController : Controller
             return View(trabajoPorTurno);
         }
 
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction("Gestionar", "Turnos", new { id = trabajoPorTurno.IdTurno });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
-        var response = await _httpClient.DeleteAsync($"api/trabajos-por-turno/{id}");
-        if (!response.IsSuccessStatusCode)
+        var response = await _httpClient.GetAsync($"api/trabajos-por-turno/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            var trabajo = await response.Content.ReadFromJsonAsync<TrabajoPorTurno>();
+            if (trabajo is not null && await TurnoEstaCerradoAsync(trabajo.IdTurno))
+            {
+                TempData["Error"] = "El turno asociado ya tiene una factura pagada o cerrada y no admite cambios.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        var deleteResponse = await _httpClient.DeleteAsync($"api/trabajos-por-turno/{id}");
+        if (!deleteResponse.IsSuccessStatusCode)
         {
             TempData["Error"] = "No se pudo eliminar el trabajo por turno.";
         }
@@ -168,23 +188,7 @@ public class TrabajosPorTurnoController : Controller
         var usuarios = usuariosResponse.IsSuccessStatusCode
             ? await usuariosResponse.Content.ReadFromJsonAsync<List<Usuario>>() ?? new List<Usuario>()
             : new List<Usuario>();
-
-        var rolesResponse = await _httpClient.GetAsync("api/roles");
-        var roles = rolesResponse.IsSuccessStatusCode
-            ? await rolesResponse.Content.ReadFromJsonAsync<List<Rol>>() ?? new List<Rol>()
-            : new List<Rol>();
-
-        // Solo se puede asignar mano de obra a usuarios con rol de mecánico
-        // (mismo criterio que valida el back en TrabajosPorTurnoRepositorio).
-        var idsRolesMecanico = roles
-            .Where(r => (r.Nombre ?? string.Empty).ToLowerInvariant().Contains("mecanic")
-                || (r.Nombre ?? string.Empty).ToLowerInvariant().Contains("mecánic"))
-            .Select(r => r.Id)
-            .ToHashSet();
-
-        ViewBag.Usuarios = usuarios
-            .Where(x => x.Activo && idsRolesMecanico.Contains(x.IdRol))
-            .ToList();
+        ViewBag.Usuarios = usuarios.Where(x => x.Activo).ToList();
 
         if (!turnosResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los turnos.");
@@ -213,6 +217,19 @@ public class TrabajosPorTurnoController : Controller
             ? await estadosResponse.Content.ReadFromJsonAsync<List<EstadoTurno>>() ?? new List<EstadoTurno>()
             : new List<EstadoTurno>();
         var estado = estados.FirstOrDefault(x => x.Id == turno.IdEstado.Value);
-        return string.Equals(estado?.Nombre?.Trim(), "Cerrado", StringComparison.OrdinalIgnoreCase);
+        if (string.Equals(estado?.Nombre?.Trim(), "Cerrado", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(estado?.Nombre?.Trim(), "Finalizado", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var facturasResponse = await _httpClient.GetAsync("api/facturas-ventas");
+        if (!facturasResponse.IsSuccessStatusCode)
+        {
+            return false;
+        }
+
+        var facturas = await facturasResponse.Content.ReadFromJsonAsync<List<FacturaVenta>>() ?? new List<FacturaVenta>();
+        return facturas.Any(x => x.IdTurno == turnoId && x.Pagado);
     }
 }

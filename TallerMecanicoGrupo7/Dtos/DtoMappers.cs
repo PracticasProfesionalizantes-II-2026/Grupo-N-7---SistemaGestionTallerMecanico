@@ -490,7 +490,8 @@ public static class DtoMappers
         Id = source.Id,
         IdUsuario = source.IdUsuario,
         FechaInicio = source.FechaInicio,
-        FechaFin = source.FechaFin
+        FechaFin = source.FechaFin,
+        Vigente = source.Vigente
     };
 
     public static SesionCaja ToEntity(this SesionCajaWriteDto source) => new()
@@ -498,6 +499,7 @@ public static class DtoMappers
         Id = source.Id,
         IdUsuario = source.IdUsuario,
         FechaInicio = source.FechaInicio,
-        FechaFin = source.FechaFin
+        FechaFin = source.FechaFin,
+        Vigente = source.Vigente
     };
 }

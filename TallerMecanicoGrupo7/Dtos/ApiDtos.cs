@@ -412,6 +412,35 @@ public class TurnoWriteDto
     public string? Descripcion { get; set; }
 }
 
+public class TurnoGestionReadDto
+{
+    public TurnoReadDto Turno { get; set; } = new();
+    public DetalleTurnoReadDto? Detalle { get; set; }
+    public List<TrabajoGestionReadDto> Trabajos { get; set; } = new();
+}
+
+public class TrabajoGestionReadDto
+{
+    public int Id { get; set; }
+    public int IdTrabajo { get; set; }
+    public string NombreTrabajo { get; set; } = string.Empty;
+    public int IdUsuario { get; set; }
+    public string NombreUsuario { get; set; } = string.Empty;
+    public decimal HsHombre { get; set; }
+    public decimal TarifaHsHombre { get; set; }
+    public string? Descripcion { get; set; }
+    public List<InsumoGestionReadDto> Insumos { get; set; } = new();
+}
+
+public class InsumoGestionReadDto
+{
+    public int Id { get; set; }
+    public int IdInsumo { get; set; }
+    public string NombreInsumo { get; set; } = string.Empty;
+    public int Cantidad { get; set; }
+    public decimal CostoInsumo { get; set; }
+}
+
 public class FacturaCompraReadDto
 {
     public int Id { get; set; }
@@ -578,6 +607,7 @@ public class SesionCajaReadDto
     public int IdUsuario { get; set; }
     public DateTime FechaInicio { get; set; }
     public DateTime FechaFin { get; set; }
+    public bool Vigente { get; set; }
 }
 
 public class SesionCajaWriteDto
@@ -590,4 +620,5 @@ public class SesionCajaWriteDto
     public DateTime FechaInicio { get; set; }
     [Required]
     public DateTime FechaFin { get; set; }
+    public bool Vigente { get; set; } = true;
 }

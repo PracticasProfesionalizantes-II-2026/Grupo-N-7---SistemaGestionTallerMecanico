@@ -23,10 +23,19 @@ public class DetallesTurnosController : Controller
         }
 
         var detalles = await response.Content.ReadFromJsonAsync<List<DetalleTurno>>() ?? new List<DetalleTurno>();
+        var turnosBloqueados = new HashSet<int>();
+        foreach (var detalle in detalles)
+        {
+            if (await TurnoEstaCerradoAsync(detalle.IdTurno))
+            {
+                turnosBloqueados.Add(detalle.IdTurno);
+            }
+        }
+        ViewBag.TurnosBloqueados = turnosBloqueados;
         return View(detalles);
     }
 
-    public async Task<IActionResult> Create(int? turnoId)
+    public async Task<IActionResult> Create(int? turnoId, string? returnUrl = null)
     {
         if (!turnoId.HasValue || turnoId.Value <= 0)
         {
@@ -39,14 +48,16 @@ public class DetallesTurnosController : Controller
             return RedirectToAction("Index", "Turnos");
         }
 
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         await CargarOpcionesAsync();
         return View(new DetalleTurno { IdTurno = turnoId.Value });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(DetalleTurno detalleTurno)
+    public async Task<IActionResult> Create(DetalleTurno detalleTurno, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         if (await TurnoEstaCerradoAsync(detalleTurno.IdTurno))
         {
             TempData["Error"] = "No se pueden agregar detalles a un turno finalizado.";
@@ -55,6 +66,7 @@ public class DetallesTurnosController : Controller
 
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(detalleTurno);
         }
@@ -64,14 +76,17 @@ public class DetallesTurnosController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo crear el detalle de turno. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(detalleTurno);
         }
 
-        return RedirectToAction("Index", "Turnos");
+        return returnUrl is null
+            ? RedirectToAction("Gestionar", "Turnos", new { id = detalleTurno.IdTurno })
+            : Redirect(returnUrl);
     }
 
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(int id, string? returnUrl = null)
     {
         var response = await _httpClient.GetAsync($"api/detalles-turnos/{id}");
         if (!response.IsSuccessStatusCode)
@@ -85,21 +100,36 @@ public class DetallesTurnosController : Controller
             return NotFound();
         }
 
+        if (await TurnoEstaCerradoAsync(detalleTurno.IdTurno))
+        {
+            TempData["Error"] = "El turno asociado ya tiene una factura pagada o está cerrado y no admite cambios.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         await CargarOpcionesAsync();
         return View(detalleTurno);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, DetalleTurno detalleTurno)
+    public async Task<IActionResult> Edit(int id, DetalleTurno detalleTurno, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         if (id != detalleTurno.Id)
         {
             return BadRequest();
         }
 
+        if (await TurnoEstaCerradoAsync(detalleTurno.IdTurno))
+        {
+            TempData["Error"] = "El turno asociado ya tiene una factura pagada o está cerrado y no admite cambios.";
+            return RedirectToAction(nameof(Index));
+        }
+
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(detalleTurno);
         }
@@ -109,17 +139,31 @@ public class DetallesTurnosController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo actualizar el detalle de turno. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(detalleTurno);
         }
 
-        return RedirectToAction(nameof(Index));
+        return returnUrl is null
+            ? RedirectToAction("Gestionar", "Turnos", new { id = detalleTurno.IdTurno })
+            : Redirect(returnUrl);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
+        var detalleResponse = await _httpClient.GetAsync($"api/detalles-turnos/{id}");
+        if (detalleResponse.IsSuccessStatusCode)
+        {
+            var detalle = await detalleResponse.Content.ReadFromJsonAsync<DetalleTurno>();
+            if (detalle is not null && await TurnoEstaCerradoAsync(detalle.IdTurno))
+            {
+                TempData["Error"] = "El turno asociado ya tiene una factura pagada o está cerrado y no admite cambios.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
         var response = await _httpClient.DeleteAsync($"api/detalles-turnos/{id}");
         if (!response.IsSuccessStatusCode)
         {
@@ -147,6 +191,13 @@ public class DetallesTurnosController : Controller
             ModelState.AddModelError(string.Empty, "No se pudieron cargar las localidades.");
     }
 
+    private string? ObtenerReturnUrlLocal(string? returnUrl)
+    {
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? returnUrl
+            : null;
+    }
+
     private async Task<bool> TurnoEstaCerradoAsync(int turnoId)
     {
         var turnoResponse = await _httpClient.GetAsync($"api/turnos/{turnoId}");
@@ -167,7 +218,19 @@ public class DetallesTurnosController : Controller
             : new List<EstadoTurno>();
         var estado = estados.FirstOrDefault(x => x.Id == turno.IdEstado.Value);
 
-        return string.Equals(estado?.Nombre?.Trim(), "Cerrado", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(estado?.Nombre?.Trim(), "Finalizado", StringComparison.OrdinalIgnoreCase);
+        if (string.Equals(estado?.Nombre?.Trim(), "Cerrado", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(estado?.Nombre?.Trim(), "Finalizado", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var facturasResponse = await _httpClient.GetAsync("api/facturas-ventas");
+        if (!facturasResponse.IsSuccessStatusCode)
+        {
+            return false;
+        }
+
+        var facturas = await facturasResponse.Content.ReadFromJsonAsync<List<FacturaVenta>>() ?? new List<FacturaVenta>();
+        return facturas.Any(x => x.IdTurno == turnoId && x.Pagado);
     }
 }

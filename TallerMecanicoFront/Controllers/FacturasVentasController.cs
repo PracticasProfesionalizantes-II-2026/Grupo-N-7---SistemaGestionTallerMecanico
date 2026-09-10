@@ -42,6 +42,7 @@ public class FacturasVentasController : Controller
         }
 
         facturaVenta.TotalFactura = 0;
+        facturaVenta.Pagado = facturaVenta.FechaPagoFactura.HasValue;
         await ValidarTurnoDisponibleAsync(facturaVenta.IdTurno);
 
         if (facturaVenta.Pagado && facturaVenta.FechaPagoFactura is null)
@@ -89,6 +90,12 @@ public class FacturasVentasController : Controller
             return NotFound();
         }
 
+        if (facturaVenta.Pagado)
+        {
+            TempData["Error"] = "La factura de venta está pagada y no puede editarse.";
+            return RedirectToAction(nameof(Index));
+        }
+
         facturaVenta.TotalFactura = await CalcularTotalAsync(id);
         await CargarOpcionesAsync(id);
         return View(facturaVenta);
@@ -103,7 +110,6 @@ public class FacturasVentasController : Controller
             return BadRequest();
         }
 
-        await ValidarTurnoDisponibleAsync(facturaVenta.IdTurno, id);
         var facturaActualResponse = await _httpClient.GetAsync($"api/facturas-ventas/{id}");
         var facturaActual = facturaActualResponse.IsSuccessStatusCode
             ? await facturaActualResponse.Content.ReadFromJsonAsync<FacturaVenta>()
@@ -112,6 +118,14 @@ public class FacturasVentasController : Controller
         {
             return NotFound();
         }
+
+        if (facturaActual.Pagado)
+        {
+            TempData["Error"] = "La factura de venta está pagada y no puede editarse.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        await ValidarTurnoDisponibleAsync(facturaVenta.IdTurno, id);
         facturaVenta.TotalFactura = await CalcularTotalAsync(id);
 
         if (facturaVenta.Pagado && facturaVenta.FechaPagoFactura is null)
@@ -146,10 +160,24 @@ public class FacturasVentasController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
+        var facturaActualResponse = await _httpClient.GetAsync($"api/facturas-ventas/{id}");
+        if (facturaActualResponse.IsSuccessStatusCode)
+        {
+            var facturaActual = await facturaActualResponse.Content.ReadFromJsonAsync<FacturaVenta>();
+            if (facturaActual is not null && facturaActual.Pagado)
+            {
+                TempData["Error"] = "La factura de venta está pagada y no puede eliminarse.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
         var response = await _httpClient.DeleteAsync($"api/facturas-ventas/{id}");
         if (!response.IsSuccessStatusCode)
         {
-            TempData["Error"] = "No se pudo eliminar la factura de venta.";
+            var errorContent = await response.Content.ReadAsStringAsync();
+            TempData["Error"] = string.IsNullOrWhiteSpace(errorContent)
+                ? "No se pudo eliminar la factura de venta."
+                : errorContent;
         }
 
         return RedirectToAction(nameof(Index));
@@ -184,7 +212,7 @@ public class FacturasVentasController : Controller
             ? await sesionesResponse.Content.ReadFromJsonAsync<List<SesionCaja>>() ?? new List<SesionCaja>()
             : new List<SesionCaja>();
         ViewBag.SesionesCaja = sesionesCaja
-            .Where(x => x.IdUsuario > 0)
+            .Where(x => x.IdUsuario > 0 && x.Vigente)
             .ToList();
 
         var formasPagoResponse = await _httpClient.GetAsync("api/formas-pago");

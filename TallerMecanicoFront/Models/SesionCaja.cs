@@ -18,6 +18,9 @@ public class SesionCaja : IValidatableObject
     [Display(Name = "Fecha de fin")]
     public DateTime FechaFin { get; set; } = DateTime.Now;
 
+    [Display(Name = "Sesión vigente")]
+    public bool Vigente { get; set; } = true;
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         var results = new List<ValidationResult>();

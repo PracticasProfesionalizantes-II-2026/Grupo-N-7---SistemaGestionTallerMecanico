@@ -25,11 +25,30 @@ public class FacturasComprasRepositorio : IFacturasComprasRepositorio
 
     public async Task AddFacturaCompraAsync(FacturaCompra facturaCompra)
     {
+        await ValidarReferenciasActivasAsync(facturaCompra);
+
         // El total se construye a partir de los detalles (ver DetalleFacturasComprasRepositorio),
         // nunca se acepta el valor que venga en el alta.
         facturaCompra.TotalFactura = 0;
         _context.FacturasCompras.Add(facturaCompra);
         await _context.SaveChangesAsync();
+    }
+
+    private async Task ValidarReferenciasActivasAsync(FacturaCompra facturaCompra)
+    {
+        var proveedorActivo = await _context.Proveedores
+            .AnyAsync(x => x.Id == facturaCompra.IdProveedor && x.Activo);
+        if (!proveedorActivo)
+        {
+            throw new InvalidOperationException("No se puede facturar con un proveedor dado de baja.");
+        }
+
+        var sesionVigente = await _context.SesionesCaja
+            .AnyAsync(x => x.Id == facturaCompra.IdSesionCaja && x.Vigente);
+        if (!sesionVigente)
+        {
+            throw new InvalidOperationException("No se puede facturar con una sesión de caja invalidada.");
+        }
     }
 
     public async Task UpdateFacturaCompraAsync(FacturaCompra facturaCompra)

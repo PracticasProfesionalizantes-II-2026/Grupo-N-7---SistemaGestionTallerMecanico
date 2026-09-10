@@ -25,12 +25,46 @@ public class InsumosPorTrabajoRepositorio : IInsumosPorTrabajoRepositorio
 
     public async Task AddInsumoPorTrabajoAsync(InsumoPorTrabajo insumoPorTrabajo)
     {
+        var versionador = new InsumoVersionador(_context);
+        var insumo = await versionador.ActualizarPrecioVentaYStockAsync(
+            insumoPorTrabajo.IdInsumo,
+            (await versionador.ObtenerVersionActivaAsync(insumoPorTrabajo.IdInsumo)).PrecioVenta,
+            -insumoPorTrabajo.Cantidad);
+        ValidarStock(insumo);
+
         _context.InsumosPorTrabajo.Add(insumoPorTrabajo);
         await _context.SaveChangesAsync();
     }
 
     public async Task UpdateInsumoPorTrabajoAsync(InsumoPorTrabajo insumoPorTrabajo)
     {
+        var existente = await _context.InsumosPorTrabajo
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == insumoPorTrabajo.Id);
+        if (existente is null)
+        {
+            throw new InvalidOperationException("El insumo por trabajo no existe.");
+        }
+
+        var versionador = new InsumoVersionador(_context);
+        if (existente.IdInsumo == insumoPorTrabajo.IdInsumo)
+        {
+            var insumo = await versionador.ObtenerVersionActivaAsync(insumoPorTrabajo.IdInsumo);
+            insumo.Stock += existente.Cantidad - insumoPorTrabajo.Cantidad;
+            ValidarStock(insumo);
+        }
+        else
+        {
+            var insumoAnterior = await versionador.ObtenerVersionActivaAsync(existente.IdInsumo);
+            insumoAnterior.Stock += existente.Cantidad;
+
+            var insumoNuevo = await versionador.ActualizarPrecioVentaYStockAsync(
+                insumoPorTrabajo.IdInsumo,
+                (await versionador.ObtenerVersionActivaAsync(insumoPorTrabajo.IdInsumo)).PrecioVenta,
+                -insumoPorTrabajo.Cantidad);
+            ValidarStock(insumoNuevo);
+        }
+
         _context.DetachTrackedEntity(insumoPorTrabajo);
         _context.InsumosPorTrabajo.Update(insumoPorTrabajo);
         await _context.SaveChangesAsync();
@@ -41,8 +75,20 @@ public class InsumosPorTrabajoRepositorio : IInsumosPorTrabajoRepositorio
         var insumoPorTrabajo = await _context.InsumosPorTrabajo.FindAsync(id);
         if (insumoPorTrabajo != null)
         {
+            var versionador = new InsumoVersionador(_context);
+            var insumo = await versionador.ObtenerVersionActivaAsync(insumoPorTrabajo.IdInsumo);
+            insumo.Stock += insumoPorTrabajo.Cantidad;
+
             _context.InsumosPorTrabajo.Remove(insumoPorTrabajo);
             await _context.SaveChangesAsync();
+        }
+    }
+
+    private static void ValidarStock(Insumo insumo)
+    {
+        if (insumo.Stock < 0)
+        {
+            throw new InvalidOperationException("No hay stock suficiente para registrar el consumo del insumo.");
         }
     }
 }

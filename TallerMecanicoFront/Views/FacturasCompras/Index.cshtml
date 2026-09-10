@@ -57,11 +57,15 @@
                                 @if (!item.Pagado)
                                 {
                                     <a asp-controller="DetallesFacturasCompras" asp-action="Create" asp-route-facturaId="@item.Id" class="btn btn-sm btn-outline-success">Agregar detalle</a>
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar esta factura de compra?');">Eliminar</button>
+                                    </form>
                                 }
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
-                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar esta factura de compra?');">Eliminar</button>
-                                </form>
+                                else
+                                {
+                                    <a asp-controller="DetallesFacturasCompras" asp-action="Index" asp-route-facturaId="@item.Id" class="btn btn-sm btn-outline-secondary">Ver detalle</a>
+                                }
                             </div>
                         </td>
                     </tr>
