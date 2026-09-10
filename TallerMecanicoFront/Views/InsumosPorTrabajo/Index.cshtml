@@ -1,6 +1,8 @@
 @model IEnumerable<TallerMecanicoFront.Models.InsumoPorTrabajo>
 @{
     ViewData["Title"] = "Insumos por Trabajo";
+    var turnosBloqueados = ViewBag.TurnosBloqueados as HashSet<int> ?? new HashSet<int>();
+    var trabajosPorTurno = ViewBag.TrabajosPorTurno as IEnumerable<TallerMecanicoFront.Models.TrabajoPorTurno> ?? Enumerable.Empty<TallerMecanicoFront.Models.TrabajoPorTurno>();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -38,10 +40,14 @@
                         <td>@item.Cantidad</td>
                         <td class="text-end">
                             <div class="d-inline-flex gap-2">
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
-                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar este insumo por trabajo?');">Eliminar</button>
-                                </form>
+                                @{ var trabajo = trabajosPorTurno.FirstOrDefault(x => x.Id == item.IdTrabajoTurno); }
+                                @if (trabajo is null || !turnosBloqueados.Contains(trabajo.IdTurno))
+                                {
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar este insumo por trabajo?');">Eliminar</button>
+                                    </form>
+                                }
                             </div>
                         </td>
                     </tr>

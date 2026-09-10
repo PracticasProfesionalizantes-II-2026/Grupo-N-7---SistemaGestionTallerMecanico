@@ -57,10 +57,13 @@
                         <td class="text-end">
                             <div class="d-inline-flex gap-2">
                                 <a asp-controller="DetallesFacturasVentas" asp-action="Index" asp-route-facturaId="@item.Id" class="btn btn-sm btn-outline-success">Ver detalle</a>
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
-                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar esta factura de venta?');">Eliminar</button>
-                                </form>
+                                @if (!item.Pagado)
+                                {
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar esta factura de venta?');">Eliminar</button>
+                                    </form>
+                                }
                             </div>
                         </td>
                     </tr>

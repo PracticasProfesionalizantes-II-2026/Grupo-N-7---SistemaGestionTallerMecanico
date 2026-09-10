@@ -54,6 +54,7 @@ public class FacturasComprasController : Controller
         }
 
         facturaCompra.TotalFactura = 0;
+        facturaCompra.Pagado = facturaCompra.FechaPagoFactura.HasValue;
 
         if (facturaCompra.Pagado && facturaCompra.FechaPagoFactura is null)
         {
@@ -100,6 +101,12 @@ public class FacturasComprasController : Controller
             return NotFound();
         }
 
+        if (facturaCompra.Pagado)
+        {
+            TempData["Error"] = "La factura de compra está pagada y no puede editarse.";
+            return RedirectToAction(nameof(Index));
+        }
+
         facturaCompra.TotalFactura = await CalcularTotalAsync(id);
         await CargarOpcionesAsync();
         return View(facturaCompra);
@@ -122,6 +129,13 @@ public class FacturasComprasController : Controller
         {
             return NotFound();
         }
+
+        if (facturaActual.Pagado)
+        {
+            TempData["Error"] = "La factura de compra está pagada y no puede editarse.";
+            return RedirectToAction(nameof(Index));
+        }
+
         facturaCompra.TotalFactura = await CalcularTotalAsync(id);
 
         if (facturaCompra.Pagado && facturaCompra.FechaPagoFactura is null)
@@ -156,10 +170,24 @@ public class FacturasComprasController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
+        var facturaActualResponse = await _httpClient.GetAsync($"api/facturas-compras/{id}");
+        if (facturaActualResponse.IsSuccessStatusCode)
+        {
+            var facturaActual = await facturaActualResponse.Content.ReadFromJsonAsync<FacturaCompra>();
+            if (facturaActual is not null && facturaActual.Pagado)
+            {
+                TempData["Error"] = "La factura de compra está pagada y no puede eliminarse.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
         var response = await _httpClient.DeleteAsync($"api/facturas-compras/{id}");
         if (!response.IsSuccessStatusCode)
         {
-            TempData["Error"] = "No se pudo eliminar la factura de compra.";
+            var errorContent = await response.Content.ReadAsStringAsync();
+            TempData["Error"] = string.IsNullOrWhiteSpace(errorContent)
+                ? "No se pudo eliminar la factura de compra."
+                : errorContent;
         }
 
         return RedirectToAction(nameof(Index));
@@ -178,7 +206,7 @@ public class FacturasComprasController : Controller
             ? await sesionesResponse.Content.ReadFromJsonAsync<List<SesionCaja>>() ?? new List<SesionCaja>()
             : new List<SesionCaja>();
         ViewBag.SesionesCaja = sesionesCaja
-            .Where(x => x.IdUsuario > 0)
+            .Where(x => x.IdUsuario > 0 && x.Vigente)
             .ToList();
 
         var formasPagoResponse = await _httpClient.GetAsync("api/formas-pago");

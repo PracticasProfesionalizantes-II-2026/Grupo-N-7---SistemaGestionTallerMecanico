@@ -26,17 +26,20 @@ public class LocalidadesController : Controller
         return View(localidades);
     }
 
-    public IActionResult Create()
+    public IActionResult Create(string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         return View();
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Localidad localidad)
+    public async Task<IActionResult> Create(Localidad localidad, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             return View(localidad);
         }
 
@@ -53,10 +56,23 @@ public class LocalidadesController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo crear la localidad. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             return View(localidad);
         }
 
-        return RedirectToAction(nameof(Index));
+        return RedirectarDespuesDeCrear(returnUrl);
+    }
+
+    private string? ObtenerReturnUrlLocal(string? returnUrl)
+    {
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? returnUrl
+            : null;
+    }
+
+    private IActionResult RedirectarDespuesDeCrear(string? returnUrl)
+    {
+        return returnUrl is null ? RedirectToAction(nameof(Index)) : Redirect(returnUrl);
     }
 
     public async Task<IActionResult> Edit(int id)

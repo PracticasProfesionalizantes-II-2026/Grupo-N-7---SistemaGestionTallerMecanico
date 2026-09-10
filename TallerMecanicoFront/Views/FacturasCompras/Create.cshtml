@@ -17,8 +17,8 @@
                     <div class="col-md-6"><label asp-for="IdProveedor" class="form-label">Proveedor</label><select asp-for="IdProveedor" class="form-select" required><option value="">Seleccione un proveedor</option>@foreach (var proveedor in proveedores){<option value="@proveedor.Id">@proveedor.Apellido, @proveedor.Nombre</option>}</select><span asp-validation-for="IdProveedor" class="text-danger"></span></div>
                     <div class="col-md-6"><label asp-for="IdSesionCaja" class="form-label">Sesión de caja</label><select asp-for="IdSesionCaja" class="form-select" required><option value="">Seleccione una sesión</option>@foreach (var sesion in sesiones){<option value="@sesion.Id">#@sesion.Id - @sesion.FechaInicio.ToString("dd/MM/yyyy HH:mm")</option>}</select><span asp-validation-for="IdSesionCaja" class="text-danger"></span></div>
                     <div class="col-md-4"><label asp-for="FechaFactura" class="form-label">Fecha de factura</label><input asp-for="FechaFactura" type="date" class="form-control" required /><span asp-validation-for="FechaFactura" class="text-danger"></span></div>
-                    <div class="col-md-4"><label asp-for="IdFormaPago" class="form-label">Forma de pago</label><select asp-for="IdFormaPago" class="form-select" required><option value="">Seleccione una forma de pago</option>@foreach (var forma in formasPago){<option value="@forma.Id">@forma.Nombre</option>}</select><span asp-validation-for="IdFormaPago" class="text-danger"></span></div>
-                    <div class="col-md-6"><div class="form-check mt-2"><input asp-for="Pagado" class="form-check-input" id="pagado" /><label asp-for="Pagado" class="form-check-label">Factura pagada</label></div></div>
+                    <div class="col-md-4"><label asp-for="IdFormaPago" class="form-label">Forma de pago</label><div class="input-group"><select asp-for="IdFormaPago" class="form-select" required><option value="">Seleccione una forma de pago</option>@foreach (var forma in formasPago){<option value="@forma.Id">@forma.Nombre</option>}</select><a asp-controller="FormasPago" asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary" title="Agregar forma de pago">Nueva</a></div><span asp-validation-for="IdFormaPago" class="text-danger"></span></div>
+                    <input asp-for="Pagado" type="hidden" value="false" />
                     <div class="col-md-6"><label asp-for="FechaPagoFactura" class="form-label">Fecha de pago</label><input asp-for="FechaPagoFactura" type="date" class="form-control" /></div>
                 </div>
                 <div class="d-flex gap-2 mt-4"><button type="submit" class="btn btn-primary">Guardar</button><a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a></div>
@@ -27,4 +27,17 @@
     </div>
 </div>
 
-@section Scripts {<partial name="_ValidationScriptsPartial" />}
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const fechaPago = document.getElementById("FechaPagoFactura");
+        const pagado = document.getElementById("Pagado");
+
+        function sincronizarPago() {
+            pagado.value = fechaPago.value ? "true" : "false";
+        }
+
+        fechaPago.addEventListener("change", sincronizarPago);
+        sincronizarPago();
+    </script>
+}

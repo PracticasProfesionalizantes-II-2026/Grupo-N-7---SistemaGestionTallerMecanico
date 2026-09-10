@@ -26,19 +26,21 @@ public class InsumosController : Controller
         return View(insumos);
     }
 
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(int? facturaId)
     {
         await CargarOpcionesAsync();
+        ViewBag.FacturaCompraId = facturaId;
         return View(new Insumo());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Insumo insumo)
+    public async Task<IActionResult> Create(Insumo insumo, int? facturaId)
     {
         if (!ModelState.IsValid)
         {
             await CargarOpcionesAsync();
+            ViewBag.FacturaCompraId = facturaId;
             return View(insumo);
         }
 
@@ -48,7 +50,13 @@ public class InsumosController : Controller
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo crear el insumo. Detalle: {errorContent}");
             await CargarOpcionesAsync();
+            ViewBag.FacturaCompraId = facturaId;
             return View(insumo);
+        }
+
+        if (facturaId.HasValue && facturaId.Value > 0)
+        {
+            return RedirectToAction("Create", "DetallesFacturasCompras", new { facturaId = facturaId.Value });
         }
 
         return RedirectToAction(nameof(Index));

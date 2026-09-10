@@ -1,6 +1,7 @@
 @model IEnumerable<TallerMecanicoFront.Models.TrabajoPorTurno>
 @{
     ViewData["Title"] = "Trabajos por Turno";
+    var turnosBloqueados = ViewBag.TurnosBloqueados as HashSet<int> ?? new HashSet<int>();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -40,10 +41,13 @@
                         <td>$@item.TarifaHsHombre.ToString("0.00")</td>
                         <td class="text-end">
                             <div class="d-inline-flex gap-2">
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
-                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar este trabajo por turno?');">Eliminar</button>
-                                </form>
+                                @if (!turnosBloqueados.Contains(item.IdTurno))
+                                {
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar este trabajo por turno?');">Eliminar</button>
+                                    </form>
+                                }
                             </div>
                         </td>
                     </tr>

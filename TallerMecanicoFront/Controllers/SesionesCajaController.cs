@@ -78,6 +78,12 @@ public class SesionesCajaController : Controller
             return NotFound();
         }
 
+        if (!sesionCaja.Vigente)
+        {
+            TempData["Error"] = "Las sesiones invalidadas no se pueden editar.";
+            return RedirectToAction(nameof(Index));
+        }
+
         await CargarOpcionesAsync();
         return View(sesionCaja);
     }
@@ -89,6 +95,21 @@ public class SesionesCajaController : Controller
         if (id != sesionCaja.Id)
         {
             return BadRequest();
+        }
+
+        var sesionOriginalResponse = await _httpClient.GetAsync($"api/sesiones-caja/{id}");
+        var sesionOriginal = sesionOriginalResponse.IsSuccessStatusCode
+            ? await sesionOriginalResponse.Content.ReadFromJsonAsync<SesionCaja>()
+            : null;
+        if (sesionOriginal is null)
+        {
+            return NotFound();
+        }
+
+        if (!sesionOriginal.Vigente)
+        {
+            TempData["Error"] = "Las sesiones invalidadas no se pueden editar.";
+            return RedirectToAction(nameof(Index));
         }
 
         if (sesionCaja.FechaFin < sesionCaja.FechaInicio)
@@ -118,6 +139,17 @@ public class SesionesCajaController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
+        var sesionResponse = await _httpClient.GetAsync($"api/sesiones-caja/{id}");
+        if (sesionResponse.IsSuccessStatusCode)
+        {
+            var sesion = await sesionResponse.Content.ReadFromJsonAsync<SesionCaja>();
+            if (sesion is not null && !sesion.Vigente)
+            {
+                TempData["Error"] = "Las sesiones invalidadas no se pueden eliminar.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
         var response = await _httpClient.DeleteAsync($"api/sesiones-caja/{id}");
         if (!response.IsSuccessStatusCode)
         {

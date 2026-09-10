@@ -10,6 +10,7 @@
                 <h1 class="h4 mb-4">Nuevo Estado de Turno</h1>
 
                 <form asp-action="Create" method="post" class="needs-validation" novalidate>
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                     <div class="mb-4">
@@ -21,7 +22,14 @@
 
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">Guardar</button>
-                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                        @if (ViewData["ReturnUrl"] is string returnUrl)
+                        {
+                            <a href="@returnUrl" class="btn btn-outline-secondary">Cancelar</a>
+                        }
+                        else
+                        {
+                            <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                        }
                     </div>
                 </form>
             </div>

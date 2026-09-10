@@ -26,18 +26,21 @@ public class ClientesController : Controller
         return View(clientes);
     }
 
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         await CargarLocalidadesAsync();
         return View(new Cliente());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Cliente cliente)
+    public async Task<IActionResult> Create(Cliente cliente, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarLocalidadesAsync();
             return View(cliente);
         }
@@ -62,11 +65,12 @@ public class ClientesController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo crear el cliente. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarLocalidadesAsync();
             return View(cliente);
         }
 
-        return RedirectToAction(nameof(Index));
+        return returnUrl is null ? RedirectToAction(nameof(Index)) : Redirect(returnUrl);
     }
 
     // Vista de solo lectura: es la que se ofrece en vez de "Editar" cuando
@@ -173,5 +177,12 @@ public class ClientesController : Controller
             ViewBag.Localidades = new List<Localidad>();
             ModelState.AddModelError(string.Empty, "No se pudieron cargar las localidades.");
         }
+    }
+
+    private string? ObtenerReturnUrlLocal(string? returnUrl)
+    {
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? returnUrl
+            : null;
     }
 }

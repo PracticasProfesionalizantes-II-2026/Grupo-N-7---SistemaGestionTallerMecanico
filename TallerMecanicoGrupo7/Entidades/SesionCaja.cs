@@ -19,6 +19,8 @@ namespace ClasesTallerMecanico.Models
         [Required(ErrorMessage = "La fecha es requerida.")]
         public DateTime FechaFin { get; set; }
 
+        public bool Vigente { get; set; } = true;
+
         public ICollection<FacturaCompra> FacturasCompra { get; set; } // Relacion 1 a muchos con FacturaCompra
         public ICollection<FacturaVenta> FacturasVenta { get; set; } // Relacion 1 a muchos con FacturaVenta
     }

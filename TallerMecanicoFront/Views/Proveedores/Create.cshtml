@@ -12,6 +12,7 @@
                 <h1 class="h4 mb-4">Nuevo Proveedor</h1>
 
                 <form asp-action="Create" method="post" class="needs-validation" novalidate>
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -31,13 +32,16 @@
                         </div>
                         <div class="col-md-4">
                             <label asp-for="IdLocalidad" class="form-label">Localidad</label>
-                            <select asp-for="IdLocalidad" class="form-select" required>
-                                <option value="">Seleccione una localidad</option>
-                                @foreach (var localidad in localidades)
-                                {
-                                    <option value="@localidad.Id">@localidad.Nombre - @localidad.Provincia</option>
-                                }
-                            </select>
+                            <div class="input-group">
+                                <select asp-for="IdLocalidad" class="form-select" required>
+                                    <option value="">Seleccione una localidad</option>
+                                    @foreach (var localidad in localidades)
+                                    {
+                                        <option value="@localidad.Id">@localidad.Nombre - @localidad.Provincia</option>
+                                    }
+                                </select>
+                                <a asp-controller="Localidades" asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary" title="Agregar localidad">Nueva</a>
+                            </div>
                             <span asp-validation-for="IdLocalidad" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">
@@ -68,7 +72,14 @@
 
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">Guardar</button>
-                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                        @if (ViewData["ReturnUrl"] is string returnUrl)
+                        {
+                            <a href="@returnUrl" class="btn btn-outline-secondary">Cancelar</a>
+                        }
+                        else
+                        {
+                            <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                        }
                     </div>
                 </form>
             </div>

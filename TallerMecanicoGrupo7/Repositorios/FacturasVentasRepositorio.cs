@@ -54,6 +54,8 @@ public class FacturasVentasRepositorio : IFacturasVentasRepositorio
 
     public async Task AddFacturaVentaAsync(FacturaVenta facturaVenta)
     {
+        await ValidarReferenciasActivasAsync(facturaVenta);
+
         var yaFacturado = await _context.FacturasVentas.AnyAsync(x => x.IdTurno == facturaVenta.IdTurno);
         if (yaFacturado)
         {
@@ -65,6 +67,23 @@ public class FacturasVentasRepositorio : IFacturasVentasRepositorio
         facturaVenta.TotalFactura = await CalcularTotalTurnoAsync(facturaVenta.IdTurno);
         _context.FacturasVentas.Add(facturaVenta);
         await _context.SaveChangesAsync();
+    }
+
+    private async Task ValidarReferenciasActivasAsync(FacturaVenta facturaVenta)
+    {
+        var clienteActivo = await _context.Clientes
+            .AnyAsync(x => x.Id == facturaVenta.IdCliente && x.Activo);
+        if (!clienteActivo)
+        {
+            throw new InvalidOperationException("No se puede facturar con un cliente dado de baja.");
+        }
+
+        var sesionVigente = await _context.SesionesCaja
+            .AnyAsync(x => x.Id == facturaVenta.IdSesionCaja && x.Vigente);
+        if (!sesionVigente)
+        {
+            throw new InvalidOperationException("No se puede facturar con una sesión de caja invalidada.");
+        }
     }
 
     public async Task UpdateFacturaVentaAsync(FacturaVenta facturaVenta)
@@ -117,17 +136,17 @@ public class FacturasVentasRepositorio : IFacturasVentasRepositorio
                 x.Insumo.Nombre,
                 x.Insumo.Marca,
                 Cantidad = (decimal)x.Cantidad,
-                x.Insumo.PrecioVenta
+                PrecioUnitario = x.CostoInsumo
             })
-            .GroupBy(x => new { x.IdInsumo, x.Nombre, x.Marca, x.PrecioVenta })
+            .GroupBy(x => new { x.IdInsumo, x.Nombre, x.Marca, x.PrecioUnitario })
             .Select(x => new InsumoFacturaVentaReadDto
             {
                 IdInsumo = x.Key.IdInsumo,
                 NombreInsumo = x.Key.Nombre,
                 Marca = x.Key.Marca,
                 Cantidad = x.Sum(item => item.Cantidad),
-                PrecioUnitario = x.Key.PrecioVenta,
-                Total = x.Sum(item => item.Cantidad) * x.Key.PrecioVenta
+                PrecioUnitario = x.Key.PrecioUnitario,
+                Total = x.Sum(item => item.PrecioUnitario)
             })
             .OrderBy(x => x.NombreInsumo)
             .ThenBy(x => x.Marca)

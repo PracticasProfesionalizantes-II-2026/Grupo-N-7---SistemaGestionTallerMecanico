@@ -26,17 +26,20 @@ public class TiposTurnoController : Controller
         return View(tiposTurno);
     }
 
-    public IActionResult Create()
+    public IActionResult Create(string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         return View(new TipoTurno());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(TipoTurno tipoTurno)
+    public async Task<IActionResult> Create(TipoTurno tipoTurno, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             return View(tipoTurno);
         }
 
@@ -45,10 +48,18 @@ public class TiposTurnoController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo crear el tipo de turno. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             return View(tipoTurno);
         }
 
-        return RedirectToAction(nameof(Index));
+        return returnUrl is null ? RedirectToAction(nameof(Index)) : Redirect(returnUrl);
+    }
+
+    private string? ObtenerReturnUrlLocal(string? returnUrl)
+    {
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? returnUrl
+            : null;
     }
 
     public async Task<IActionResult> Edit(int id)

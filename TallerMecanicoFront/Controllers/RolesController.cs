@@ -26,17 +26,20 @@ public class RolesController : Controller
         return View(roles);
     }
 
-    public IActionResult Create()
+    public IActionResult Create(string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         return View();
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Rol rol)
+    public async Task<IActionResult> Create(Rol rol, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             return View(rol);
         }
 
@@ -51,10 +54,23 @@ public class RolesController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo crear el rol. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             return View(rol);
         }
 
-        return RedirectToAction(nameof(Index));
+        return RedirectarDespuesDeCrear(returnUrl);
+    }
+
+    private string? ObtenerReturnUrlLocal(string? returnUrl)
+    {
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? returnUrl
+            : null;
+    }
+
+    private IActionResult RedirectarDespuesDeCrear(string? returnUrl)
+    {
+        return returnUrl is null ? RedirectToAction(nameof(Index)) : Redirect(returnUrl);
     }
 
     public async Task<IActionResult> Edit(int id)

@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Crear Insumo";
     var proveedores = ViewBag.Proveedores as IEnumerable<Proveedor> ?? Enumerable.Empty<Proveedor>();
+    var facturaCompraId = ViewBag.FacturaCompraId as int?;
 }
 
 <div class="row justify-content-center">
@@ -11,6 +12,13 @@
             <div class="card-body p-4">
                 <h1 class="h4 mb-4">Nuevo Insumo</h1>
                 <form asp-action="Create" method="post">
+                    @if (facturaCompraId.HasValue)
+                    {
+                        <input type="hidden" name="facturaId" value="@facturaCompraId.Value" />
+                    }
+                    <input asp-for="Stock" type="hidden" />
+                    <input asp-for="PrecioCompra" type="hidden" value="0" />
+                    <input asp-for="PrecioVenta" type="hidden" value="0" />
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                     <div class="row g-3">
@@ -44,16 +52,6 @@
                             <div class="form-check mt-4">
                                 <input type="hidden" asp-for="Activo" value="true" />
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label asp-for="PrecioCompra" class="form-label">Precio compra</label>
-                            <input asp-for="PrecioCompra" type="number" step="0.01" min="0" class="form-control" required />
-                            <span asp-validation-for="PrecioCompra" class="text-danger"></span>
-                        </div>
-                        <div class="col-md-6">
-                            <label asp-for="PrecioVenta" class="form-label">Precio venta</label>
-                            <input asp-for="PrecioVenta" type="number" step="0.01" min="0" class="form-control" required />
-                            <span asp-validation-for="PrecioVenta" class="text-danger"></span>
                         </div>
                     </div>
 

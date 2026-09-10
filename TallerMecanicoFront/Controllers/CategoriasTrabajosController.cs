@@ -26,17 +26,20 @@ public class CategoriasTrabajosController : Controller
         return View(categorias);
     }
 
-    public IActionResult Create()
+    public IActionResult Create(string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         return View(new CategoriaTrabajo());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(CategoriaTrabajo categoriaTrabajo)
+    public async Task<IActionResult> Create(CategoriaTrabajo categoriaTrabajo, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             return View(categoriaTrabajo);
         }
 
@@ -52,10 +55,18 @@ public class CategoriasTrabajosController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo crear la categoria de trabajo. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             return View(categoriaTrabajo);
         }
 
-        return RedirectToAction(nameof(Index));
+        return returnUrl is null ? RedirectToAction(nameof(Index)) : Redirect(returnUrl);
+    }
+
+    private string? ObtenerReturnUrlLocal(string? returnUrl)
+    {
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? returnUrl
+            : null;
     }
 
     // Vista de solo lectura: es la que se ofrece en vez de "Editar" cuando

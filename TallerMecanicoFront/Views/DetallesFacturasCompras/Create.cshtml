@@ -29,7 +29,10 @@
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="IdInsumo" class="form-label">Insumo</label>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <label asp-for="IdInsumo" class="form-label mb-0">Insumo</label>
+                            <a asp-controller="Insumos" asp-action="Create" asp-route-facturaId="@Model.IdFacturaCompra" class="btn btn-outline-primary btn-sm">Nuevo insumo</a>
+                        </div>
                         <select asp-for="IdInsumo" class="form-select" required>
                             <option value="">Seleccione un insumo</option>
                             @foreach (var insumo in insumos)

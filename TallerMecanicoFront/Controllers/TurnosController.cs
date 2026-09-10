@@ -27,19 +27,32 @@ public class TurnosController : Controller
         ViewBag.EstadosTurno = estadosResponse.IsSuccessStatusCode
             ? await estadosResponse.Content.ReadFromJsonAsync<List<EstadoTurno>>() ?? new List<EstadoTurno>()
             : new List<EstadoTurno>();
+
+        var turnosBloqueados = new HashSet<int>();
+        foreach (var turno in turnos)
+        {
+            if (await TurnoEstaBloqueadoAsync(turno.Id))
+            {
+                turnosBloqueados.Add(turno.Id);
+            }
+        }
+        ViewBag.TurnosBloqueados = turnosBloqueados;
+
         return View(turnos);
     }
 
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = ObtenerReturnUrlLocal(returnUrl);
         await CargarOpcionesAsync();
         return View(new Turno());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Turno turno)
+    public async Task<IActionResult> Create(Turno turno, string? returnUrl = null)
     {
+        returnUrl = ObtenerReturnUrlLocal(returnUrl);
         if (turno is null)
         {
             return BadRequest();
@@ -57,6 +70,7 @@ public class TurnosController : Controller
 
         if (!ModelState.IsValid)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(turno);
         }
@@ -66,14 +80,38 @@ public class TurnosController : Controller
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             ModelState.AddModelError(string.Empty, $"No se pudo crear el turno. Detalle: {errorContent}");
+            ViewData["ReturnUrl"] = returnUrl;
             await CargarOpcionesAsync();
             return View(turno);
+        }
+
+        if (returnUrl is not null)
+        {
+            return Redirect(returnUrl);
         }
 
         var turnoCreado = await response.Content.ReadFromJsonAsync<Turno>();
         return turnoCreado is null
             ? RedirectToAction(nameof(Index))
-            : RedirectToAction("Create", "DetallesTurnos", new { turnoId = turnoCreado.Id });
+            : RedirectToAction(nameof(Gestionar), new { id = turnoCreado.Id });
+    }
+
+    public async Task<IActionResult> Gestionar(int id)
+    {
+        var response = await _httpClient.GetAsync($"api/turnos/{id}/gestion");
+        if (!response.IsSuccessStatusCode)
+        {
+            return NotFound();
+        }
+
+        var gestion = await response.Content.ReadFromJsonAsync<TurnoGestionViewModel>();
+        if (gestion is null)
+        {
+            return NotFound();
+        }
+
+        gestion.PuedeEditar = !await TurnoEstaBloqueadoAsync(id);
+        return View(gestion);
     }
 
     public async Task<IActionResult> Edit(int id)
@@ -90,6 +128,12 @@ public class TurnosController : Controller
             return NotFound();
         }
 
+        if (await TurnoEstaBloqueadoAsync(id))
+        {
+            TempData["Error"] = "El turno está asociado a una factura pagada o cerrado y no puede modificarse.";
+            return RedirectToAction(nameof(Index));
+        }
+
         await CargarOpcionesAsync();
         return View(turno);
     }
@@ -101,6 +145,12 @@ public class TurnosController : Controller
         if (id != turno.Id)
         {
             return BadRequest();
+        }
+
+        if (await TurnoEstaBloqueadoAsync(id))
+        {
+            TempData["Error"] = "El turno está asociado a una factura pagada o cerrado y no puede modificarse.";
+            return RedirectToAction(nameof(Index));
         }
 
         if (turno.IdTipoTurno is null)
@@ -135,10 +185,19 @@ public class TurnosController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
+        if (await TurnoEstaBloqueadoAsync(id))
+        {
+            TempData["Error"] = "El turno está asociado a una factura pagada o cerrado y no puede eliminarse.";
+            return RedirectToAction(nameof(Index));
+        }
+
         var response = await _httpClient.DeleteAsync($"api/turnos/{id}");
         if (!response.IsSuccessStatusCode)
         {
-            TempData["Error"] = "No se pudo eliminar el turno.";
+            var errorContent = await response.Content.ReadAsStringAsync();
+            TempData["Error"] = string.IsNullOrWhiteSpace(errorContent)
+                ? "No se pudo eliminar el turno."
+                : errorContent;
         }
 
         return RedirectToAction(nameof(Index));
@@ -176,5 +235,53 @@ public class TurnosController : Controller
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los tipos de turno.");
         if (!estadosResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los estados de turno.");
+    }
+
+    private string? ObtenerReturnUrlLocal(string? returnUrl)
+    {
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? returnUrl
+            : null;
+    }
+
+    private async Task<bool> TurnoEstaBloqueadoAsync(int turnoId)
+    {
+        var turnoResponse = await _httpClient.GetAsync($"api/turnos/{turnoId}");
+        if (!turnoResponse.IsSuccessStatusCode)
+        {
+            return false;
+        }
+
+        var turno = await turnoResponse.Content.ReadFromJsonAsync<Turno>();
+        if (turno is null)
+        {
+            return false;
+        }
+
+        var facturasResponse = await _httpClient.GetAsync("api/facturas-ventas");
+        var facturas = facturasResponse.IsSuccessStatusCode
+            ? await facturasResponse.Content.ReadFromJsonAsync<List<FacturaVenta>>() ?? new List<FacturaVenta>()
+            : new List<FacturaVenta>();
+
+        var facturaPagada = facturas.Any(x => x.IdTurno == turnoId && x.Pagado);
+        if (facturaPagada)
+        {
+            return true;
+        }
+
+        if (turno.IdEstado is null)
+        {
+            return false;
+        }
+
+        var estadosResponse = await _httpClient.GetAsync("api/estados-turno");
+        var estados = estadosResponse.IsSuccessStatusCode
+            ? await estadosResponse.Content.ReadFromJsonAsync<List<EstadoTurno>>() ?? new List<EstadoTurno>()
+            : new List<EstadoTurno>();
+
+        var estado = estados.FirstOrDefault(x => x.Id == turno.IdEstado.Value);
+        var nombre = estado?.Nombre ?? string.Empty;
+        return string.Equals(nombre.Trim(), "Cerrado", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(nombre.Trim(), "Finalizado", StringComparison.OrdinalIgnoreCase);
     }
 }
