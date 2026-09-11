@@ -34,6 +34,7 @@ public class DetallesFacturasVentasController : Controller
         }
 
         ViewBag.Factura = factura;
+        ViewBag.FacturaPagada = factura.Pagado;
         return View(detalle);
     }
 
@@ -50,9 +51,9 @@ public class DetallesFacturasVentasController : Controller
             return NotFound();
         }
 
-        if (factura.Pagado)
+        if (factura.Pagado && await TieneDetallesAsync(facturaId.Value))
         {
-            TempData["Error"] = "No se pueden agregar detalles a una factura de venta pagada.";
+            TempData["Error"] = "La factura de venta pagada ya tiene detalles y no admite nuevos conceptos.";
             return RedirectToAction("Index", "FacturasVentas");
         }
 
@@ -81,9 +82,9 @@ public class DetallesFacturasVentasController : Controller
         {
             ModelState.AddModelError(nameof(detalle.IdFactura), "La factura de venta no existe.");
         }
-        else if (factura.Pagado)
+        else if (factura.Pagado && await TieneDetallesAsync(detalle.IdFactura))
         {
-            TempData["Error"] = "No se pueden agregar detalles a una factura de venta pagada.";
+            TempData["Error"] = "La factura de venta pagada ya tiene detalles y no admite nuevos conceptos.";
             return RedirectToAction("Index", "FacturasVentas");
         }
 
@@ -138,6 +139,13 @@ public class DetallesFacturasVentasController : Controller
             return NotFound();
         }
 
+        var factura = await ObtenerFacturaAsync(detalle.IdFactura);
+        if (factura?.Pagado == true)
+        {
+            TempData["Error"] = "No se pueden editar detalles de una factura de venta pagada.";
+            return RedirectToAction(nameof(Index), new { facturaId = detalle.IdFactura });
+        }
+
         await CargarOpcionesAsync();
         return View(detalle);
     }
@@ -158,6 +166,12 @@ public class DetallesFacturasVentasController : Controller
         if (detalleOriginal is null)
         {
             return NotFound();
+        }
+        var facturaOriginal = await ObtenerFacturaAsync(detalleOriginal.IdFactura);
+        if (facturaOriginal?.Pagado == true)
+        {
+            TempData["Error"] = "No se pueden editar detalles de una factura de venta pagada.";
+            return RedirectToAction(nameof(Index), new { facturaId = detalleOriginal.IdFactura });
         }
         detalle.IdFactura = detalleOriginal.IdFactura;
 
@@ -206,6 +220,15 @@ public class DetallesFacturasVentasController : Controller
         var detalle = detalleResponse.IsSuccessStatusCode
             ? await detalleResponse.Content.ReadFromJsonAsync<DetalleFacturaVenta>()
             : null;
+        if (detalle is not null)
+        {
+            var factura = await ObtenerFacturaAsync(detalle.IdFactura);
+            if (factura?.Pagado == true)
+            {
+                TempData["Error"] = "No se pueden eliminar detalles de una factura de venta pagada.";
+                return RedirectToAction(nameof(Index), new { facturaId = detalle.IdFactura });
+            }
+        }
         var response = await _httpClient.DeleteAsync($"api/detalles-facturas-ventas/{id}");
         if (!response.IsSuccessStatusCode)
         {
@@ -270,6 +293,18 @@ public class DetallesFacturasVentasController : Controller
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los insumos por trabajo.");
         if (!insumosCatalogoResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar los precios de los insumos.");
+    }
+
+    private async Task<bool> TieneDetallesAsync(int facturaId)
+    {
+        var response = await _httpClient.GetAsync("api/detalles-facturas-ventas");
+        if (!response.IsSuccessStatusCode)
+        {
+            return true;
+        }
+
+        var detalles = await response.Content.ReadFromJsonAsync<List<DetalleFacturaVenta>>() ?? new List<DetalleFacturaVenta>();
+        return detalles.Any(x => x.IdFactura == facturaId);
     }
 
     private async Task ActualizarTotalFacturaAsync(int facturaId)
