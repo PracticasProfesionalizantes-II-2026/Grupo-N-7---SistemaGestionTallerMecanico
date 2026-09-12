@@ -13,7 +13,7 @@ public class MaquinasController : Controller
         _httpClient = httpClientFactory.CreateClient("TallerApi");
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? buscar = null, string estado = "activos")
     {
         var response = await _httpClient.GetAsync("api/maquinas");
         if (!response.IsSuccessStatusCode)
@@ -23,6 +23,33 @@ public class MaquinasController : Controller
         }
 
         var maquinas = await response.Content.ReadFromJsonAsync<List<Maquina>>() ?? new List<Maquina>();
+
+        var estadoNormalizado = string.IsNullOrWhiteSpace(estado) ? "activos" : estado.Trim().ToLowerInvariant();
+
+        if (estadoNormalizado == "activos")
+        {
+            maquinas = maquinas.Where(x => x.Activo).ToList();
+        }
+        else if (estadoNormalizado == "inactivos")
+        {
+            maquinas = maquinas.Where(x => !x.Activo).ToList();
+        }
+        // Si es "todos", no se filtra por el campo Activo
+
+        if (!string.IsNullOrWhiteSpace(buscar))
+        {
+            var termino = buscar.Trim();
+            maquinas = maquinas.Where(x =>
+                (!string.IsNullOrEmpty(x.Nombre) && x.Nombre.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(x.Marca) && x.Marca.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(x.Patente) && x.Patente.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(x.Motor) && x.Motor.Contains(termino, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+        }
+
+        ViewBag.Buscar = buscar;
+        ViewBag.Estado = estadoNormalizado;
+
         return View(maquinas);
     }
 

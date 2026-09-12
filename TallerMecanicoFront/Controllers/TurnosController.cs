@@ -14,7 +14,7 @@ public class TurnosController : Controller
         _httpClient = httpClientFactory.CreateClient("TallerApi");
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? buscar = null, string estado = "activos")
     {
         var response = await _httpClient.GetAsync("api/turnos");
         if (!response.IsSuccessStatusCode)
@@ -24,10 +24,73 @@ public class TurnosController : Controller
         }
 
         var turnos = await response.Content.ReadFromJsonAsync<List<Turno>>() ?? new List<Turno>();
+
+        var clientesResponse = await _httpClient.GetAsync("api/clientes");
+        var clientes = clientesResponse.IsSuccessStatusCode
+            ? await clientesResponse.Content.ReadFromJsonAsync<List<Cliente>>() ?? new List<Cliente>()
+            : new List<Cliente>();
+        ViewBag.Clientes = clientes;
+
+        var maquinasResponse = await _httpClient.GetAsync("api/maquinas");
+        var maquinas = maquinasResponse.IsSuccessStatusCode
+            ? await maquinasResponse.Content.ReadFromJsonAsync<List<Maquina>>() ?? new List<Maquina>()
+            : new List<Maquina>();
+        ViewBag.Maquinas = maquinas;
+
+        var tiposTurnoResponse = await _httpClient.GetAsync("api/tipos-turno");
+        ViewBag.TiposTurno = tiposTurnoResponse.IsSuccessStatusCode
+            ? await tiposTurnoResponse.Content.ReadFromJsonAsync<List<TipoTurno>>() ?? new List<TipoTurno>()
+            : new List<TipoTurno>();
+
         var estadosResponse = await _httpClient.GetAsync("api/estados-turno");
-        ViewBag.EstadosTurno = estadosResponse.IsSuccessStatusCode
+        var estadosTurno = estadosResponse.IsSuccessStatusCode
             ? await estadosResponse.Content.ReadFromJsonAsync<List<EstadoTurno>>() ?? new List<EstadoTurno>()
             : new List<EstadoTurno>();
+        ViewBag.EstadosTurno = estadosTurno;
+
+        var idsFinalizados = estadosTurno
+            .Where(e => string.Equals(e.Nombre?.Trim(), "Finalizado", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(e.Nombre?.Trim(), "Cerrado", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(e.Nombre?.Trim(), "Cancelado", StringComparison.OrdinalIgnoreCase))
+            .Select(e => e.Id)
+            .ToHashSet();
+
+        var estadoNormalizado = string.IsNullOrWhiteSpace(estado) ? "activos" : estado.Trim().ToLowerInvariant();
+
+        if (estadoNormalizado == "activos")
+        {
+            turnos = turnos.Where(x => !x.IdEstado.HasValue || !idsFinalizados.Contains(x.IdEstado.Value)).ToList();
+        }
+        else if (estadoNormalizado == "finalizados")
+        {
+            turnos = turnos.Where(x => x.IdEstado.HasValue && idsFinalizados.Contains(x.IdEstado.Value)).ToList();
+        }
+        else if (int.TryParse(estadoNormalizado, out var estadoIdFiltro))
+        {
+            turnos = turnos.Where(x => x.IdEstado == estadoIdFiltro).ToList();
+        }
+        // Si es "todos", no se filtra por estado
+
+        if (!string.IsNullOrWhiteSpace(buscar))
+        {
+            var termino = buscar.Trim();
+            var clientesDict = clientes.GroupBy(c => c.Id).ToDictionary(g => g.Key, g => g.First());
+            var maquinasDict = maquinas.GroupBy(m => m.Id).ToDictionary(g => g.Key, g => g.First());
+
+            turnos = turnos.Where(x =>
+                (!string.IsNullOrEmpty(x.Descripcion) && x.Descripcion.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                (clientesDict.TryGetValue(x.IdCliente, out var cli) && (
+                    (!string.IsNullOrEmpty(cli.Nombre) && cli.Nombre.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(cli.Apellido) && cli.Apellido.Contains(termino, StringComparison.OrdinalIgnoreCase))
+                )) ||
+                (maquinasDict.TryGetValue(x.IdMaquina, out var maq) && (
+                    (!string.IsNullOrEmpty(maq.Nombre) && maq.Nombre.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(maq.Marca) && maq.Marca.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(maq.Patente) && maq.Patente.Contains(termino, StringComparison.OrdinalIgnoreCase))
+                )) ||
+                x.Fecha.ToString("dd/MM/yyyy").Contains(termino)
+            ).ToList();
+        }
 
         var turnosBloqueados = new HashSet<int>();
         foreach (var turno in turnos)
@@ -38,6 +101,8 @@ public class TurnosController : Controller
             }
         }
         ViewBag.TurnosBloqueados = turnosBloqueados;
+        ViewBag.Buscar = buscar;
+        ViewBag.Estado = estadoNormalizado;
 
         return View(turnos);
     }

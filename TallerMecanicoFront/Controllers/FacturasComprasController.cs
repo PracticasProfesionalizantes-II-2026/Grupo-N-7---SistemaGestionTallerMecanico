@@ -13,7 +13,7 @@ public class FacturasComprasController : Controller
         _httpClient = httpClientFactory.CreateClient("TallerApi");
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? buscar = null, string estado = "todas")
     {
         var response = await _httpClient.GetAsync("api/facturas-compras");
         if (!response.IsSuccessStatusCode)
@@ -35,6 +35,50 @@ public class FacturasComprasController : Controller
                     MidpointRounding.AwayFromZero);
             }
         }
+
+        var proveedoresResponse = await _httpClient.GetAsync("api/proveedores");
+        var proveedores = proveedoresResponse.IsSuccessStatusCode
+            ? await proveedoresResponse.Content.ReadFromJsonAsync<List<Proveedor>>() ?? new List<Proveedor>()
+            : new List<Proveedor>();
+        ViewBag.Proveedores = proveedores;
+
+        var formasPagoResponse = await _httpClient.GetAsync("api/formas-pago");
+        var formasPago = formasPagoResponse.IsSuccessStatusCode
+            ? await formasPagoResponse.Content.ReadFromJsonAsync<List<FormaPago>>() ?? new List<FormaPago>()
+            : new List<FormaPago>();
+        ViewBag.FormasPago = formasPago;
+
+        var estadoNormalizado = string.IsNullOrWhiteSpace(estado) ? "todas" : estado.Trim().ToLowerInvariant();
+
+        if (estadoNormalizado == "pagadas")
+        {
+            facturas = facturas.Where(x => x.Pagado).ToList();
+        }
+        else if (estadoNormalizado == "pendientes")
+        {
+            facturas = facturas.Where(x => !x.Pagado).ToList();
+        }
+        // Si es "todas", no se filtra por Pagado
+
+        if (!string.IsNullOrWhiteSpace(buscar))
+        {
+            var termino = buscar.Trim();
+            var proveedoresDict = proveedores.GroupBy(p => p.Id).ToDictionary(g => g.Key, g => g.First());
+
+            facturas = facturas.Where(x =>
+                (proveedoresDict.TryGetValue(x.IdProveedor, out var prov) && (
+                    (!string.IsNullOrEmpty(prov.Nombre) && prov.Nombre.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(prov.Apellido) && prov.Apellido.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(prov.CuilCuit) && prov.CuilCuit.Contains(termino, StringComparison.OrdinalIgnoreCase))
+                )) ||
+                x.Id.ToString() == termino ||
+                x.FechaFactura.ToString("dd/MM/yyyy").Contains(termino)
+            ).ToList();
+        }
+
+        ViewBag.Buscar = buscar;
+        ViewBag.Estado = estadoNormalizado;
+
         return View(facturas);
     }
 

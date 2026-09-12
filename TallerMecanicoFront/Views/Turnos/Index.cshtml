@@ -4,6 +4,17 @@
     ViewData["Title"] = "Turnos";
     var estadosTurno = ViewBag.EstadosTurno as IEnumerable<EstadoTurno> ?? Enumerable.Empty<EstadoTurno>();
     var turnosBloqueados = ViewBag.TurnosBloqueados as HashSet<int> ?? new HashSet<int>();
+    var estadoActual = (ViewBag.Estado as string) ?? "activos";
+    var busquedaActual = (ViewBag.Buscar as string) ?? string.Empty;
+
+    var clientes = (ViewBag.Clientes as IEnumerable<Cliente> ?? Enumerable.Empty<Cliente>())
+        .GroupBy(c => c.Id).ToDictionary(g => g.Key, g => g.First());
+    var maquinas = (ViewBag.Maquinas as IEnumerable<Maquina> ?? Enumerable.Empty<Maquina>())
+        .GroupBy(m => m.Id).ToDictionary(g => g.Key, g => g.First());
+    var tiposTurno = (ViewBag.TiposTurno as IEnumerable<TipoTurno> ?? Enumerable.Empty<TipoTurno>())
+        .GroupBy(t => t.Id).ToDictionary(g => g.Key, g => g.First());
+    var estadosMap = estadosTurno
+        .GroupBy(e => e.Id).ToDictionary(g => g.Key, g => g.First());
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -20,6 +31,48 @@
 {
     <div asp-validation-summary="All" class="alert alert-danger"></div>
 }
+
+<form method="get" asp-action="Index" class="row row-cols-auto g-3 align-items-end mb-4">
+    <div class="col">
+        <label class="form-label fw-semibold">Buscar</label>
+        <div class="input-group">
+            <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+            <input type="text"
+                   name="buscar"
+                   class="form-control"
+                   placeholder="Cliente, máquina, descripción..."
+                   value="@busquedaActual" />
+        </div>
+    </div>
+    <div class="col">
+        <label class="form-label fw-semibold">Estado</label>
+        <select name="estado" class="form-select">
+            <!option value="activos" @(estadoActual == "activos" ? "selected" : "")>Solo activos</!option>
+            <!option value="todos" @(estadoActual == "todos" ? "selected" : "")>Todos</!option>
+            <!option value="finalizados" @(estadoActual == "finalizados" ? "selected" : "")>Finalizados / Cerrados</!option>
+            @if (estadosTurno.Any())
+            {
+                <optgroup label="Por estado específico">
+                    @foreach (var est in estadosTurno)
+                    {
+                        <!option value="@est.Id" @(estadoActual == est.Id.ToString() ? "selected" : "")>@est.Nombre</!option>
+                    }
+                </optgroup>
+            }
+        </select>
+    </div>
+    <div class="col">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-search"></i> Buscar
+        </button>
+        @if (!string.IsNullOrWhiteSpace(busquedaActual) || estadoActual != "activos")
+        {
+            <a asp-action="Index" class="btn btn-outline-secondary ms-1">
+                <i class="bi bi-x-circle"></i> Limpiar
+            </a>
+        }
+    </div>
+</form>
 
 <div class="table-responsive tabla-scroll">
     <table class="table table-striped table-hover align-middle">
@@ -40,18 +93,46 @@
             {
                 foreach (var item in Model)
                 {
-                    var turnoFinalizado = estadosTurno.Any(estado =>
-                        estado.Id == item.IdEstado
-                        && (string.Equals(estado.Nombre?.Trim(), "Finalizado", StringComparison.OrdinalIgnoreCase)
-                            || string.Equals(estado.Nombre?.Trim(), "Cerrado", StringComparison.OrdinalIgnoreCase)));
+                    var estadoObj = item.IdEstado.HasValue && estadosMap.TryGetValue(item.IdEstado.Value, out var est) ? est : null;
+                    var estadoNombre = estadoObj?.Nombre ?? (item.IdEstado.HasValue ? $"#{item.IdEstado}" : "-");
+
+                    var turnoFinalizado = string.Equals(estadoNombre.Trim(), "Finalizado", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(estadoNombre.Trim(), "Cerrado", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(estadoNombre.Trim(), "Cancelado", StringComparison.OrdinalIgnoreCase);
                     var turnoSoloLectura = turnoFinalizado || turnosBloqueados.Contains(item.Id);
+
+                    var clienteTexto = clientes.TryGetValue(item.IdCliente, out var cli)
+                        ? $"{cli.Apellido}, {cli.Nombre}"
+                        : $"#{item.IdCliente}";
+
+                    var maquinaTexto = maquinas.TryGetValue(item.IdMaquina, out var maq)
+                        ? $"{maq.Nombre} ({maq.Patente})"
+                        : $"#{item.IdMaquina}";
+
+                    var tipoTexto = item.IdTipoTurno.HasValue && tiposTurno.TryGetValue(item.IdTipoTurno.Value, out var tip)
+                        ? tip.Nombre
+                        : (item.IdTipoTurno.HasValue ? $"#{item.IdTipoTurno}" : "-");
+
                     <tr>
                         <td>@item.Id</td>
-                        <td>@item.IdCliente</td>
-                        <td>@item.IdMaquina</td>
-                        <td>@(item.IdTipoTurno ?? 0)</td>
+                        <td>@clienteTexto</td>
+                        <td>@maquinaTexto</td>
+                        <td>@tipoTexto</td>
                         <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
-                        <td>@(item.IdEstado ?? 0)</td>
+                        <td>
+                            @if (turnoFinalizado)
+                            {
+                                <span class="badge text-bg-secondary">@estadoNombre</span>
+                            }
+                            else if (string.Equals(estadoNombre.Trim(), "En curso", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <span class="badge text-bg-primary">@estadoNombre</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-success">@estadoNombre</span>
+                            }
+                        </td>
                         <td>@(string.IsNullOrWhiteSpace(item.Descripcion) ? "-" : item.Descripcion)</td>
                         <td class="text-end">
                             <div class="d-inline-flex gap-2">
@@ -80,7 +161,16 @@
             else
             {
                 <tr>
-                    <td colspan="8" class="text-center text-muted py-4">No hay turnos registrados.</td>
+                    <td colspan="8" class="text-center text-muted py-4">
+                        @if (!string.IsNullOrWhiteSpace(busquedaActual) || estadoActual != "activos")
+                        {
+                            <span>No se encontraron turnos con los filtros seleccionados.</span>
+                        }
+                        else
+                        {
+                            <span>No hay turnos registrados.</span>
+                        }
+                    </td>
                 </tr>
             }
         </tbody>

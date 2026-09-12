@@ -13,7 +13,7 @@ public class FacturasVentasController : Controller
         _httpClient = httpClientFactory.CreateClient("TallerApi");
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? buscar = null, string estado = "todas")
     {
         var response = await _httpClient.GetAsync("api/facturas-ventas");
         if (!response.IsSuccessStatusCode)
@@ -23,6 +23,51 @@ public class FacturasVentasController : Controller
         }
 
         var facturas = await response.Content.ReadFromJsonAsync<List<FacturaVenta>>() ?? new List<FacturaVenta>();
+
+        var clientesResponse = await _httpClient.GetAsync("api/clientes");
+        var clientes = clientesResponse.IsSuccessStatusCode
+            ? await clientesResponse.Content.ReadFromJsonAsync<List<Cliente>>() ?? new List<Cliente>()
+            : new List<Cliente>();
+        ViewBag.Clientes = clientes;
+
+        var formasPagoResponse = await _httpClient.GetAsync("api/formas-pago");
+        var formasPago = formasPagoResponse.IsSuccessStatusCode
+            ? await formasPagoResponse.Content.ReadFromJsonAsync<List<FormaPago>>() ?? new List<FormaPago>()
+            : new List<FormaPago>();
+        ViewBag.FormasPago = formasPago;
+
+        var estadoNormalizado = string.IsNullOrWhiteSpace(estado) ? "todas" : estado.Trim().ToLowerInvariant();
+
+        if (estadoNormalizado == "pagadas")
+        {
+            facturas = facturas.Where(x => x.Pagado).ToList();
+        }
+        else if (estadoNormalizado == "pendientes")
+        {
+            facturas = facturas.Where(x => !x.Pagado).ToList();
+        }
+        // Si es "todas", no se filtra por Pagado
+
+        if (!string.IsNullOrWhiteSpace(buscar))
+        {
+            var termino = buscar.Trim();
+            var clientesDict = clientes.GroupBy(c => c.Id).ToDictionary(g => g.Key, g => g.First());
+
+            facturas = facturas.Where(x =>
+                (clientesDict.TryGetValue(x.IdCliente, out var cli) && (
+                    (!string.IsNullOrEmpty(cli.Nombre) && cli.Nombre.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(cli.Apellido) && cli.Apellido.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(cli.CuilCuit) && cli.CuilCuit.Contains(termino, StringComparison.OrdinalIgnoreCase))
+                )) ||
+                x.Id.ToString() == termino ||
+                x.IdTurno.ToString() == termino ||
+                x.FechaEmision.ToString("dd/MM/yyyy").Contains(termino)
+            ).ToList();
+        }
+
+        ViewBag.Buscar = buscar;
+        ViewBag.Estado = estadoNormalizado;
+
         return View(facturas);
     }
 
