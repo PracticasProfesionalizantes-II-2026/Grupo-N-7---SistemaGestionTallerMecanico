@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc;
+using TallerMecanicoFront.Infrastructure;
 using TallerMecanicoFront.Models;
 
 namespace TallerMecanicoFront.Controllers;
@@ -169,6 +170,44 @@ public class TrabajosPorTurnoController : Controller
         }
 
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GuardarAjax(TrabajoPorTurno trabajoPorTurno)
+    {
+        var builder = new GestionTurnoBuilder(_httpClient);
+
+        if (await builder.EstaBloqueadoAsync(trabajoPorTurno.IdTurno))
+        {
+            return await ContenidoConErrorAsync(builder, trabajoPorTurno.IdTurno, "El turno está cerrado o tiene una factura pagada y no admite cambios.");
+        }
+
+        var response = trabajoPorTurno.Id > 0
+            ? await _httpClient.PutAsJsonAsync($"api/trabajos-por-turno/{trabajoPorTurno.Id}", trabajoPorTurno)
+            : await _httpClient.PostAsJsonAsync("api/trabajos-por-turno", trabajoPorTurno);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            return await ContenidoConErrorAsync(builder, trabajoPorTurno.IdTurno, $"No se pudo guardar el trabajo. Detalle: {errorContent}");
+        }
+
+        var modelo = await builder.ConstruirAsync(trabajoPorTurno.IdTurno);
+        return modelo is null
+            ? NotFound()
+            : PartialView("~/Views/Turnos/_GestionContenido.cshtml", modelo);
+    }
+
+    private async Task<IActionResult> ContenidoConErrorAsync(GestionTurnoBuilder builder, int idTurno, string error)
+    {
+        var modelo = await builder.ConstruirAsync(idTurno);
+        if (modelo is null)
+        {
+            return NotFound();
+        }
+        modelo.Error = error;
+        return PartialView("~/Views/Turnos/_GestionContenido.cshtml", modelo);
     }
 
     private async Task CargarOpcionesAsync()

@@ -25,7 +25,7 @@ public class SesionesCajaRepositorio : ISesionesCajaRepositorio
 
     public async Task AddSesionCajaAsync(SesionCaja sesionCaja)
     {
-        ValidarOrdenFechas(sesionCaja);
+        await ValidarFechasAsync(sesionCaja);
 
         if (sesionCaja.Vigente)
         {

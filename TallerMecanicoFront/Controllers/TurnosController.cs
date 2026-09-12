@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc;
+using TallerMecanicoFront.Infrastructure;
 using TallerMecanicoFront.Models;
 
 namespace TallerMecanicoFront.Controllers;
@@ -98,20 +99,9 @@ public class TurnosController : Controller
 
     public async Task<IActionResult> Gestionar(int id)
     {
-        var response = await _httpClient.GetAsync($"api/turnos/{id}/gestion");
-        if (!response.IsSuccessStatusCode)
-        {
-            return NotFound();
-        }
-
-        var gestion = await response.Content.ReadFromJsonAsync<TurnoGestionViewModel>();
-        if (gestion is null)
-        {
-            return NotFound();
-        }
-
-        gestion.PuedeEditar = !await TurnoEstaBloqueadoAsync(id);
-        return View(gestion);
+        var builder = new GestionTurnoBuilder(_httpClient);
+        var gestion = await builder.ConstruirAsync(id);
+        return gestion is null ? NotFound() : View(gestion);
     }
 
     public async Task<IActionResult> Edit(int id)

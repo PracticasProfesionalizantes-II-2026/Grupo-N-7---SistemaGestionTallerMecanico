@@ -13,17 +13,9 @@ public class DetallesFacturasComprasController : Controller
         _httpClient = httpClientFactory.CreateClient("TallerApi");
     }
 
-    public async Task<IActionResult> Index()
+    public IActionResult Index()
     {
-        var response = await _httpClient.GetAsync("api/detalles-facturas-compras");
-        if (!response.IsSuccessStatusCode)
-        {
-            ModelState.AddModelError(string.Empty, "No se pudieron obtener los detalles de facturas de compra desde la API.");
-            return View(new List<DetalleFacturaCompra>());
-        }
-
-        var detalles = await response.Content.ReadFromJsonAsync<List<DetalleFacturaCompra>>() ?? new List<DetalleFacturaCompra>();
-        return View(detalles);
+        return RedirectToAction("Index", "FacturasCompras");
     }
 
     public async Task<IActionResult> Details(int facturaId)
@@ -148,7 +140,7 @@ public class DetallesFacturasComprasController : Controller
         }
 
         await ActualizarTotalFacturaAsync(detalle.IdFacturaCompra);
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction("Index", "FacturasCompras");
     }
 
     public async Task<IActionResult> Edit(int id)
@@ -169,7 +161,7 @@ public class DetallesFacturasComprasController : Controller
         if (factura?.Pagado == true)
         {
             TempData["Error"] = "No se pueden editar detalles de una factura de compra pagada.";
-            return RedirectToAction(nameof(Details), new { facturaId = detalle.IdFacturaCompra });
+            return RedirectToAction("Index", "FacturasCompras");
         }
 
         await CargarOpcionesAsync();
@@ -198,7 +190,7 @@ public class DetallesFacturasComprasController : Controller
         if (facturaOriginal?.Pagado == true)
         {
             TempData["Error"] = "No se pueden editar detalles de una factura de compra pagada.";
-            return RedirectToAction(nameof(Details), new { facturaId = detalleOriginal.IdFacturaCompra });
+            return RedirectToAction("Index", "FacturasCompras");
         }
 
         if (!await ValidarInsumoAsync(detalle))
@@ -240,7 +232,7 @@ public class DetallesFacturasComprasController : Controller
         {
             await ActualizarTotalFacturaAsync(detalleOriginal.IdFacturaCompra);
         }
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction("Index", "FacturasCompras");
     }
 
     [HttpPost]
@@ -257,7 +249,7 @@ public class DetallesFacturasComprasController : Controller
             if (factura?.Pagado == true)
             {
                 TempData["Error"] = "No se pueden eliminar detalles de una factura de compra pagada.";
-                return RedirectToAction(nameof(Details), new { facturaId = detalle.IdFacturaCompra });
+                return RedirectToAction("Index", "FacturasCompras");
             }
         }
         var response = await _httpClient.DeleteAsync($"api/detalles-facturas-compras/{id}");

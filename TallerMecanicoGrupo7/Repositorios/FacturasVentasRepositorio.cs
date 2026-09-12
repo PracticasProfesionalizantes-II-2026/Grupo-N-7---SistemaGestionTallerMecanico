@@ -34,6 +34,7 @@ public class FacturasVentasRepositorio : IFacturasVentasRepositorio
             return null;
         }
 
+        var trabajos = await ObtenerTrabajosAsync(factura.IdTurno);
         var totalManoObra = await CalcularTotalManoObraAsync(factura.IdTurno);
         var insumos = await ObtenerInsumosAsync(factura.IdTurno);
 
@@ -47,6 +48,7 @@ public class FacturasVentasRepositorio : IFacturasVentasRepositorio
             IdFactura = factura.Id,
             IdTurno = factura.IdTurno,
             TotalManoObra = Math.Round(totalManoObra, 2, MidpointRounding.AwayFromZero),
+            Trabajos = trabajos,
             Insumos = insumos,
             TotalFactura = totalFactura
         };
@@ -123,7 +125,8 @@ public class FacturasVentasRepositorio : IFacturasVentasRepositorio
     {
         return await _context.TrabajosPorTurno
             .Where(x => x.IdTurno == idTurno)
-            .SumAsync(x => (decimal?)(x.HsHombre * x.TarifaHsHombre)) ?? 0m;
+            .Select(x => (decimal?)(x.HsHombre * x.Trabajo.PrecioHsManoObra))
+            .SumAsync() ?? 0m;
     }
 
     private Task<List<InsumoFacturaVentaReadDto>> ObtenerInsumosAsync(int idTurno)
@@ -136,7 +139,7 @@ public class FacturasVentasRepositorio : IFacturasVentasRepositorio
                 x.Insumo.Nombre,
                 x.Insumo.Marca,
                 Cantidad = (decimal)x.Cantidad,
-                PrecioUnitario = x.CostoInsumo
+                PrecioUnitario = x.Insumo.PrecioVenta
             })
             .GroupBy(x => new { x.IdInsumo, x.Nombre, x.Marca, x.PrecioUnitario })
             .Select(x => new InsumoFacturaVentaReadDto
@@ -146,10 +149,25 @@ public class FacturasVentasRepositorio : IFacturasVentasRepositorio
                 Marca = x.Key.Marca,
                 Cantidad = x.Sum(item => item.Cantidad),
                 PrecioUnitario = x.Key.PrecioUnitario,
-                Total = x.Sum(item => item.PrecioUnitario)
+                Total = x.Sum(item => item.PrecioUnitario * item.Cantidad)
             })
             .OrderBy(x => x.NombreInsumo)
             .ThenBy(x => x.Marca)
+            .ToListAsync();
+    }
+
+    private Task<List<TrabajoFacturaVentaReadDto>> ObtenerTrabajosAsync(int idTurno)
+    {
+        return _context.TrabajosPorTurno
+            .Where(x => x.IdTurno == idTurno)
+            .Select(x => new TrabajoFacturaVentaReadDto
+            {
+                NombreTrabajo = x.Trabajo.Nombre,
+                Horas = x.HsHombre,
+                PrecioUnitario = x.Trabajo.PrecioHsManoObra,
+                Total = x.HsHombre * x.Trabajo.PrecioHsManoObra
+            })
+            .OrderBy(x => x.NombreTrabajo)
             .ToListAsync();
     }
 }

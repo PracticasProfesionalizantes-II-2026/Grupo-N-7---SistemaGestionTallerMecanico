@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc;
+using TallerMecanicoFront.Infrastructure;
 using TallerMecanicoFront.Models;
 
 namespace TallerMecanicoFront.Controllers;
@@ -171,6 +172,49 @@ public class DetallesTurnosController : Controller
         }
 
         return RedirectToAction(nameof(Index));
+    }
+
+    // Usado por el hub de gestión de turno (Turnos/Gestionar): guarda el detalle
+    // (Add si Id==0, si no Edit) y devuelve el contenido actualizado del hub,
+    // sin navegar a ningún lado. La validación de turno bloqueado y las reglas
+    // de negocio son las mismas que ya usan Create/Edit — no se duplican, se
+    // reutiliza el mismo endpoint de la API.
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GuardarAjax(DetalleTurno detalleTurno)
+    {
+        var builder = new GestionTurnoBuilder(_httpClient);
+
+        if (await builder.EstaBloqueadoAsync(detalleTurno.IdTurno))
+        {
+            return await ContenidoConErrorAsync(builder, detalleTurno.IdTurno, "El turno está cerrado o tiene una factura pagada y no admite cambios.");
+        }
+
+        var response = detalleTurno.Id > 0
+            ? await _httpClient.PutAsJsonAsync($"api/detalles-turnos/{detalleTurno.Id}", detalleTurno)
+            : await _httpClient.PostAsJsonAsync("api/detalles-turnos", detalleTurno);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            return await ContenidoConErrorAsync(builder, detalleTurno.IdTurno, $"No se pudo guardar el detalle del turno. Detalle: {errorContent}");
+        }
+
+        var modelo = await builder.ConstruirAsync(detalleTurno.IdTurno);
+        return modelo is null
+            ? NotFound()
+            : PartialView("~/Views/Turnos/_GestionContenido.cshtml", modelo);
+    }
+
+    private async Task<IActionResult> ContenidoConErrorAsync(GestionTurnoBuilder builder, int idTurno, string error)
+    {
+        var modelo = await builder.ConstruirAsync(idTurno);
+        if (modelo is null)
+        {
+            return NotFound();
+        }
+        modelo.Error = error;
+        return PartialView("~/Views/Turnos/_GestionContenido.cshtml", modelo);
     }
 
     private async Task CargarOpcionesAsync()
