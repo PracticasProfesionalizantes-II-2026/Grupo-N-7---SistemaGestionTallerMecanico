@@ -6,6 +6,13 @@ public class TurnoGestionViewModel
     public DetalleTurno? Detalle { get; set; }
     public List<TrabajoGestionViewModel> Trabajos { get; set; } = new();
     public bool PuedeEditar { get; set; }
+    public string? Error { get; set; }
+
+    // Opciones para los formularios inline del hub de gestión (ver _GestionContenido.cshtml).
+    public List<Localidad> Localidades { get; set; } = new();
+    public List<Trabajo> TrabajosDisponibles { get; set; } = new();
+    public List<Usuario> UsuariosDisponibles { get; set; } = new();
+    public List<Insumo> InsumosDisponibles { get; set; } = new();
 }
 
 public class TrabajoGestionViewModel

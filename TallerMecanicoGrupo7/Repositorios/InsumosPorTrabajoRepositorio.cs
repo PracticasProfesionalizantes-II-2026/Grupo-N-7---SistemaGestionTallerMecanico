@@ -32,6 +32,9 @@ public class InsumosPorTrabajoRepositorio : IInsumosPorTrabajoRepositorio
             -insumoPorTrabajo.Cantidad);
         ValidarStock(insumo);
 
+        // Si el insumo original estaba inactivo (versionado por precio), acá se
+        // guarda apuntando a la versión activa real, no al Id viejo.
+        insumoPorTrabajo.IdInsumo = insumo.Id;
         _context.InsumosPorTrabajo.Add(insumoPorTrabajo);
         await _context.SaveChangesAsync();
     }
@@ -52,6 +55,7 @@ public class InsumosPorTrabajoRepositorio : IInsumosPorTrabajoRepositorio
             var insumo = await versionador.ObtenerVersionActivaAsync(insumoPorTrabajo.IdInsumo);
             insumo.Stock += existente.Cantidad - insumoPorTrabajo.Cantidad;
             ValidarStock(insumo);
+            insumoPorTrabajo.IdInsumo = insumo.Id;
         }
         else
         {
@@ -63,6 +67,7 @@ public class InsumosPorTrabajoRepositorio : IInsumosPorTrabajoRepositorio
                 (await versionador.ObtenerVersionActivaAsync(insumoPorTrabajo.IdInsumo)).PrecioVenta,
                 -insumoPorTrabajo.Cantidad);
             ValidarStock(insumoNuevo);
+            insumoPorTrabajo.IdInsumo = insumoNuevo.Id;
         }
 
         _context.DetachTrackedEntity(insumoPorTrabajo);

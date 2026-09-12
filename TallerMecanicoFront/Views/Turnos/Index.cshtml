@@ -40,6 +40,11 @@
             {
                 foreach (var item in Model)
                 {
+                    var turnoFinalizado = estadosTurno.Any(estado =>
+                        estado.Id == item.IdEstado
+                        && (string.Equals(estado.Nombre?.Trim(), "Finalizado", StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(estado.Nombre?.Trim(), "Cerrado", StringComparison.OrdinalIgnoreCase)));
+                    var turnoSoloLectura = turnoFinalizado || turnosBloqueados.Contains(item.Id);
                     <tr>
                         <td>@item.Id</td>
                         <td>@item.IdCliente</td>
@@ -50,11 +55,15 @@
                         <td>@(string.IsNullOrWhiteSpace(item.Descripcion) ? "-" : item.Descripcion)</td>
                         <td class="text-end">
                             <div class="d-inline-flex gap-2">
-                                @if (!turnosBloqueados.Contains(item.Id) && !estadosTurno.Any(estado => estado.Id == item.IdEstado && (string.Equals(estado.Nombre?.Trim(), "Finalizado", StringComparison.OrdinalIgnoreCase) || string.Equals(estado.Nombre?.Trim(), "Cerrado", StringComparison.OrdinalIgnoreCase))))
+                                @if (turnoSoloLectura)
+                                {
+                                    <a asp-action="Gestionar" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Ver detalle</a>
+                                }
+                                else if (!turnosBloqueados.Contains(item.Id))
                                 {
                                     <a asp-action="Gestionar" asp-route-id="@item.Id" class="btn btn-sm btn-outline-success">Gestionar</a>
                                 }
-                                @if (!turnosBloqueados.Contains(item.Id))
+                                @if (!turnoSoloLectura)
                                 {
                                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
                                     <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">

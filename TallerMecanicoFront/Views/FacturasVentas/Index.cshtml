@@ -42,7 +42,7 @@
                         <td>@item.FechaEmision.ToString("dd/MM/yyyy")</td>
                         <td>@item.IdCliente</td>
                         <td>@item.IdTurno</td>
-                        <td>@item.TotalFactura.ToString("C2")</td>
+                        <td>$@item.TotalFactura.ToString("0.00")</td>
                         <td>@item.IdFormaPago</td>
                         <td>
                             @if (item.Pagado)

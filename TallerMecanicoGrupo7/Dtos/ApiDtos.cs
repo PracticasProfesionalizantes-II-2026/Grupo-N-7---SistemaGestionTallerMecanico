@@ -356,7 +356,7 @@ public class TrabajoPorTurnoWriteDto
     [Range(1, int.MaxValue)]
     public int IdUsuario { get; set; }
     [Required]
-    [Range(0.01, double.MaxValue)]
+    [Range(typeof(decimal), "0.01", "79228162514264337593543950335")]
     public decimal HsHombre { get; set; }
     [Required]
     [Range(typeof(decimal), "0", "79228162514264337593543950335")]
@@ -587,8 +587,17 @@ public class FacturaVentaDetalleReadDto
     public int IdFactura { get; set; }
     public int IdTurno { get; set; }
     public decimal TotalManoObra { get; set; }
+    public List<TrabajoFacturaVentaReadDto> Trabajos { get; set; } = new();
     public List<InsumoFacturaVentaReadDto> Insumos { get; set; } = new();
     public decimal TotalFactura { get; set; }
+}
+
+public class TrabajoFacturaVentaReadDto
+{
+    public string NombreTrabajo { get; set; } = string.Empty;
+    public decimal Horas { get; set; }
+    public decimal PrecioUnitario { get; set; }
+    public decimal Total { get; set; }
 }
 
 public class InsumoFacturaVentaReadDto

@@ -1,7 +1,15 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using TallerMecanicoFront.Infrastructure;
+
+// Mismo motivo que en la API: los [Range(0.01, double.MaxValue)] de los modelos
+// (TrabajoPorTurno.HsHombre, etc.) se validan automáticamente en MVC usando la
+// cultura del hilo. Sin esto, en un servidor con configuración regional en
+// español puede tirar el mismo error de parseo de decimales.
+CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
 var builder = WebApplication.CreateBuilder(args);
 

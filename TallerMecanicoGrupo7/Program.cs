@@ -1,9 +1,20 @@
+using System.Globalization;
 using ClasesTallerMecanico.Datos;
 using ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
 using ClasesTallerMecanico.Repositorios;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+
+// La API trabaja siempre en formato invariante (punto decimal), sin importar
+// la configuración regional del servidor donde corra. Sin esto, atributos como
+// [Range(typeof(decimal), "0.01", ...)] fallan al validar en servidores con
+// configuración regional que usa coma como separador decimal (ej: español-Argentina).
+// NOTA: este fix ya se perdió 2 veces al pegar una versión vieja del proyecto
+// encima. Si el error "is not a valid value for Decimal" vuelve a aparecer,
+// es que esto se volvió a borrar — usar git para no perderlo de nuevo.
+CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
 var builder = WebApplication.CreateBuilder(args);
 

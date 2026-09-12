@@ -16,11 +16,6 @@
     </div>
 </div>
 
-@if (TempData["Error"] is not null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
-
 @if (!ViewData.ModelState.IsValid)
 {
     <div asp-validation-summary="All" class="alert alert-danger"></div>
@@ -28,7 +23,7 @@
 
 @if (facturaPagada)
 {
-    <div class="alert alert-info">La factura está pagada. Sus conceptos no se pueden editar ni eliminar.</div>
+    <div class="alert alert-success">La factura ya se encuentra pagada.</div>
 }
 
 <div class="table-responsive">
@@ -56,8 +51,8 @@
                         <td>@item.IdInsumo</td>
                         <td>@item.FechaCompra.ToString("dd/MM/yyyy")</td>
                         <td>@item.Cantidad</td>
-                        <td>@item.PrecioUnitario.ToString("N2")</td>
-                        <td>@item.TotalCompra.ToString("N2")</td>
+                        <td>$@item.PrecioUnitario.ToString("0.00")</td>
+                        <td>$@item.TotalCompra.ToString("0.00")</td>
                         <td class="text-end">
                             <div class="d-inline-flex gap-2">
                                 @if (!facturaPagada)

@@ -40,7 +40,7 @@
                         <td>@item.Id</td>
                         <td>@item.FechaFactura.ToString("dd/MM/yyyy")</td>
                         <td>@item.IdProveedor</td>
-                        <td>@item.TotalFactura.ToString("C2")</td>
+                        <td>$@item.TotalFactura.ToString("0.00")</td>
                         <td>@item.IdFormaPago</td>
                         <td>
                             @if (item.Pagado)
@@ -54,6 +54,7 @@
                         </td>
                         <td class="text-end">
                             <div class="d-inline-flex gap-2">
+                                <a asp-controller="DetallesFacturasCompras" asp-action="Details" asp-route-facturaId="@item.Id" class="btn btn-sm btn-outline-success">Ver detalle</a>
                                 @if (!item.Pagado)
                                 {
                                     <a asp-controller="DetallesFacturasCompras" asp-action="Create" asp-route-facturaId="@item.Id" class="btn btn-sm btn-outline-success">Agregar detalle</a>
@@ -61,10 +62,6 @@
                                     <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
                                         <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar esta factura de compra?');">Eliminar</button>
                                     </form>
-                                }
-                                else
-                                {
-                                    <a asp-controller="DetallesFacturasCompras" asp-action="Details" asp-route-facturaId="@item.Id" class="btn btn-sm btn-outline-secondary">Ver detalle</a>
                                 }
                             </div>
                         </td>

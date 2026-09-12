@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc;
+using TallerMecanicoFront.Infrastructure;
 using TallerMecanicoFront.Models;
 
 namespace TallerMecanicoFront.Controllers;
@@ -154,6 +155,49 @@ public class InsumosPorTrabajoController : Controller
         }
 
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GuardarAjax(InsumoPorTrabajo insumoPorTrabajo)
+    {
+        var trabajo = await ObtenerTrabajoPorTurnoAsync(insumoPorTrabajo.IdTrabajoTurno);
+        if (trabajo is null)
+        {
+            return NotFound();
+        }
+
+        var builder = new GestionTurnoBuilder(_httpClient);
+        if (await builder.EstaBloqueadoAsync(trabajo.IdTurno))
+        {
+            return await ContenidoConErrorAsync(builder, trabajo.IdTurno, "El turno está cerrado o tiene una factura pagada y no admite cambios.");
+        }
+
+        var response = insumoPorTrabajo.Id > 0
+            ? await _httpClient.PutAsJsonAsync($"api/insumos-por-trabajo/{insumoPorTrabajo.Id}", insumoPorTrabajo)
+            : await _httpClient.PostAsJsonAsync("api/insumos-por-trabajo", insumoPorTrabajo);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            return await ContenidoConErrorAsync(builder, trabajo.IdTurno, $"No se pudo guardar el material. Detalle: {errorContent}");
+        }
+
+        var modelo = await builder.ConstruirAsync(trabajo.IdTurno);
+        return modelo is null
+            ? NotFound()
+            : PartialView("~/Views/Turnos/_GestionContenido.cshtml", modelo);
+    }
+
+    private async Task<IActionResult> ContenidoConErrorAsync(GestionTurnoBuilder builder, int idTurno, string error)
+    {
+        var modelo = await builder.ConstruirAsync(idTurno);
+        if (modelo is null)
+        {
+            return NotFound();
+        }
+        modelo.Error = error;
+        return PartialView("~/Views/Turnos/_GestionContenido.cshtml", modelo);
     }
 
     private async Task CargarOpcionesAsync()
