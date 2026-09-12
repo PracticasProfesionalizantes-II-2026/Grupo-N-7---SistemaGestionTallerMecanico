@@ -1,0 +1,15 @@
+@{
+    ViewData["Title"] = "Reportes";
+}
+
+<h1 class="h3 mb-4">Reporte</h1>
+
+<div class="d-flex flex-column gap-3" style="max-width: 320px;">
+    <a asp-action="Turnos" class="btn btn-dark border py-3">Reparaciones / Programados</a>
+
+    <button type="button" class="btn btn-dark border py-3" disabled title="Se resuelve por otra vía">
+        Inventario stock
+    </button>
+
+    <a asp-action="Caja" class="btn btn-dark border py-3">Ingreso / Egreso</a>
+</div>

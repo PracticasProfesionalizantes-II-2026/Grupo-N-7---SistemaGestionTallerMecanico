@@ -114,6 +114,7 @@ app.MapLocalidadesEndpoints();
 app.MapMaquinasEndpoints();
 app.MapPersonasEndpoints();
 app.MapProveedoresEndpoints();
+app.MapReportesEndpoints();
 app.MapRolesEndpoints();
 app.MapSesionesCajaEndpoints();
 app.MapTiposTurnoEndpoints();

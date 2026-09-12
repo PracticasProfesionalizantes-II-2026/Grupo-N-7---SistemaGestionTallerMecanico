@@ -134,3 +134,19 @@ body {
     border-radius: 0.75rem;
     padding: 1.75rem;
 }
+
+/* ---- Listados largos (tablas) ---- */
+/* Evita que una tabla con muchas filas se corte contra el borde de la
+   ventana: a partir de cierta altura, la tabla scrollea dentro de su propio
+   contenedor en vez de estirar toda la página. El thead queda fijo arriba
+   para no perder de vista los encabezados al scrollear. */
+.tabla-scroll {
+    max-height: calc(100vh - 260px);
+    overflow-y: auto;
+}
+
+.tabla-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}

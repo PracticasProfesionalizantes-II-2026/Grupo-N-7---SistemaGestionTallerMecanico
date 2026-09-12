@@ -1,0 +1,86 @@
+@model TallerMecanicoFront.Models.ReporteTurnos
+@{
+    ViewData["Title"] = "Reparaciones / Programados";
+}
+
+<h1 class="h3 mb-4">Reparaciones / Programados</h1>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div asp-validation-summary="All" class="alert alert-danger"></div>
+}
+
+<form method="get" asp-action="Turnos" class="row row-cols-auto g-3 align-items-end mb-4">
+    <div class="col">
+        <label class="form-label fw-semibold">Fecha inicial</label>
+        <input type="date" name="fechaInicio" class="form-control" value="@Model.FechaInicio.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col">
+        <label class="form-label fw-semibold">Fecha Final</label>
+        <input type="date" name="fechaFin" class="form-control" value="@Model.FechaFin.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col">
+        <button type="submit" class="btn btn-outline-dark">
+            <i class="bi bi-search"></i>
+        </button>
+    </div>
+</form>
+
+<div class="row g-3 mb-4">
+    <div class="col-auto">
+        <div class="border border-success rounded p-3 text-center" style="min-width: 150px;">
+            <div class="fs-3 text-success fw-bold"><i class="bi bi-calendar3"></i> @Model.TotalTurnos</div>
+            <div>Turnos</div>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="border rounded p-3 text-center" style="min-width: 150px;">
+            <div class="fs-3 fw-bold"><i class="bi bi-calendar3"></i> @Model.TotalProgramados</div>
+            <div>Programados</div>
+        </div>
+    </div>
+    <div class="col-auto">
+        <div class="border border-warning rounded p-3 text-center" style="min-width: 150px;">
+            <div class="fs-3 text-warning fw-bold"><i class="bi bi-truck"></i> @Model.TotalReparaciones</div>
+            <div>Reparaciones</div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white border rounded p-3" style="max-width: 900px;">
+    @if (Model.Serie.Any())
+    {
+        <canvas id="graficoTurnos" height="110"></canvas>
+    }
+    else
+    {
+        <p class="text-muted mb-0">No hay turnos registrados en el rango seleccionado.</p>
+    }
+</div>
+
+@section Scripts {
+    @if (Model.Serie.Any())
+    {
+        <script src="~/lib/chart.js/chart.umd.min.js"></script>
+        <script>
+            const etiquetas = @Html.Raw(Json.Serialize(Model.Serie.Select(p => p.Fecha.ToString("dd MMM")).ToList()));
+            const programados = @Html.Raw(Json.Serialize(Model.Serie.Select(p => p.Programados).ToList()));
+            const reparaciones = @Html.Raw(Json.Serialize(Model.Serie.Select(p => p.Reparaciones).ToList()));
+
+            new Chart(document.getElementById('graficoTurnos'), {
+                type: 'bar',
+                data: {
+                    labels: etiquetas,
+                    datasets: [
+                        { label: 'Programados', data: programados, backgroundColor: '#d6337a' },
+                        { label: 'Reparaciones', data: reparaciones, backgroundColor: '#2e3a59' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+        </script>
+    }
+}

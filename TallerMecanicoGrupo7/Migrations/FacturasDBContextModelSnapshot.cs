@@ -627,9 +627,6 @@ namespace TallerMecanicoGrupo7.Migrations
                     b.Property<int?>("IdTipoTurno")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TipoId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("IdCliente");
@@ -638,7 +635,7 @@ namespace TallerMecanicoGrupo7.Migrations
 
                     b.HasIndex("IdMaquina");
 
-                    b.HasIndex("TipoId");
+                    b.HasIndex("IdTipoTurno");
 
                     b.ToTable("Turnos");
                 });
@@ -950,7 +947,7 @@ namespace TallerMecanicoGrupo7.Migrations
 
                     b.HasOne("ClasesTallerMecanico.Models.TipoTurno", "Tipo")
                         .WithMany()
-                        .HasForeignKey("TipoId");
+                        .HasForeignKey("IdTipoTurno");
 
                     b.Navigation("Cliente");
 
