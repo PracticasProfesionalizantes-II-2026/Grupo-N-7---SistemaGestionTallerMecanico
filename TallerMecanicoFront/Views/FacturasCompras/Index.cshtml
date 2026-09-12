@@ -1,6 +1,14 @@
 @model IEnumerable<TallerMecanicoFront.Models.FacturaCompra>
+@using TallerMecanicoFront.Models
 @{
     ViewData["Title"] = "Facturas de Compra";
+    var estadoActual = (ViewBag.Estado as string) ?? "todas";
+    var busquedaActual = (ViewBag.Buscar as string) ?? string.Empty;
+
+    var proveedores = (ViewBag.Proveedores as IEnumerable<Proveedor> ?? Enumerable.Empty<Proveedor>())
+        .GroupBy(p => p.Id).ToDictionary(g => g.Key, g => g.First());
+    var formasPago = (ViewBag.FormasPago as IEnumerable<FormaPago> ?? Enumerable.Empty<FormaPago>())
+        .GroupBy(f => f.Id).ToDictionary(g => g.Key, g => g.First());
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -17,6 +25,39 @@
 {
     <div asp-validation-summary="All" class="alert alert-danger"></div>
 }
+
+<form method="get" asp-action="Index" class="row row-cols-auto g-3 align-items-end mb-4">
+    <div class="col">
+        <label class="form-label fw-semibold">Buscar</label>
+        <div class="input-group">
+            <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+            <input type="text"
+                   name="buscar"
+                   class="form-control"
+                   placeholder="Proveedor, CUIT o N°..."
+                   value="@busquedaActual" />
+        </div>
+    </div>
+    <div class="col">
+        <label class="form-label fw-semibold">Estado</label>
+        <select name="estado" class="form-select">
+            <!option value="todas" @(estadoActual == "todas" ? "selected" : "")>Todas</!option>
+            <!option value="pendientes" @(estadoActual == "pendientes" ? "selected" : "")>Solo pendientes</!option>
+            <!option value="pagadas" @(estadoActual == "pagadas" ? "selected" : "")>Solo pagadas</!option>
+        </select>
+    </div>
+    <div class="col">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-search"></i> Buscar
+        </button>
+        @if (!string.IsNullOrWhiteSpace(busquedaActual) || estadoActual != "todas")
+        {
+            <a asp-action="Index" class="btn btn-outline-secondary ms-1">
+                <i class="bi bi-x-circle"></i> Limpiar
+            </a>
+        }
+    </div>
+</form>
 
 <div class="table-responsive tabla-scroll">
     <table class="table table-striped table-hover align-middle">
@@ -36,12 +77,20 @@
             {
                 foreach (var item in Model)
                 {
+                    var proveedorTexto = proveedores.TryGetValue(item.IdProveedor, out var prov)
+                        ? $"{prov.Apellido}, {prov.Nombre}"
+                        : $"#{item.IdProveedor}";
+
+                    var formaPagoTexto = formasPago.TryGetValue(item.IdFormaPago, out var fp)
+                        ? fp.Nombre
+                        : $"#{item.IdFormaPago}";
+
                     <tr>
                         <td>@item.Id</td>
                         <td>@item.FechaFactura.ToString("dd/MM/yyyy")</td>
-                        <td>@item.IdProveedor</td>
+                        <td>@proveedorTexto</td>
                         <td>$@item.TotalFactura.ToString("0.00")</td>
-                        <td>@item.IdFormaPago</td>
+                        <td>@formaPagoTexto</td>
                         <td>
                             @if (item.Pagado)
                             {
@@ -71,7 +120,16 @@
             else
             {
                 <tr>
-                    <td colspan="7" class="text-center text-muted py-4">No hay facturas de compra registradas.</td>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        @if (!string.IsNullOrWhiteSpace(busquedaActual) || estadoActual != "todas")
+                        {
+                            <span>No se encontraron facturas de compra con los filtros seleccionados.</span>
+                        }
+                        else
+                        {
+                            <span>No hay facturas de compra registradas.</span>
+                        }
+                    </td>
                 </tr>
             }
         </tbody>

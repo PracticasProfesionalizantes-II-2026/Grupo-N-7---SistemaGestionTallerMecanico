@@ -13,7 +13,7 @@ public class InsumosController : Controller
         _httpClient = httpClientFactory.CreateClient("TallerApi");
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? buscar = null, string estado = "activos")
     {
         var response = await _httpClient.GetAsync("api/insumos");
         if (!response.IsSuccessStatusCode)
@@ -23,6 +23,31 @@ public class InsumosController : Controller
         }
 
         var insumos = await response.Content.ReadFromJsonAsync<List<Insumo>>() ?? new List<Insumo>();
+
+        var estadoNormalizado = string.IsNullOrWhiteSpace(estado) ? "activos" : estado.Trim().ToLowerInvariant();
+
+        if (estadoNormalizado == "activos")
+        {
+            insumos = insumos.Where(x => x.Activo).ToList();
+        }
+        else if (estadoNormalizado == "inactivos")
+        {
+            insumos = insumos.Where(x => !x.Activo).ToList();
+        }
+        // Si es "todos", no se filtra por el campo Activo
+
+        if (!string.IsNullOrWhiteSpace(buscar))
+        {
+            var termino = buscar.Trim();
+            insumos = insumos.Where(x =>
+                (!string.IsNullOrEmpty(x.Nombre) && x.Nombre.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(x.Marca) && x.Marca.Contains(termino, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+        }
+
+        ViewBag.Buscar = buscar;
+        ViewBag.Estado = estadoNormalizado;
+
         return View(insumos);
     }
 

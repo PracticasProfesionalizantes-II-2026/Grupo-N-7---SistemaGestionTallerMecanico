@@ -68,6 +68,20 @@ public class FacturasVentasRepositorio : IFacturasVentasRepositorio
         // nunca se acepta el valor que venga en el alta.
         facturaVenta.TotalFactura = await CalcularTotalTurnoAsync(facturaVenta.IdTurno);
         _context.FacturasVentas.Add(facturaVenta);
+
+        // Al facturar el turno, se actualiza automáticamente su estado a "Finalizado" (o "Cerrado").
+        var turno = await _context.Turnos.FindAsync(facturaVenta.IdTurno);
+        if (turno is not null)
+        {
+            var estadoFinalizado = await _context.EstadosTurno
+                .FirstOrDefaultAsync(e => e.Nombre.ToLower() == "finalizado" || e.Nombre.ToLower() == "cerrado");
+
+            if (estadoFinalizado is not null)
+            {
+                turno.IdEstado = estadoFinalizado.Id;
+            }
+        }
+
         await _context.SaveChangesAsync();
     }
 

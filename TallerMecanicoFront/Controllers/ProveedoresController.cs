@@ -13,7 +13,7 @@ public class ProveedoresController : Controller
         _httpClient = httpClientFactory.CreateClient("TallerApi");
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? buscar = null, string estado = "activos")
     {
         var response = await _httpClient.GetAsync("api/proveedores");
         if (!response.IsSuccessStatusCode)
@@ -23,6 +23,33 @@ public class ProveedoresController : Controller
         }
 
         var proveedores = await response.Content.ReadFromJsonAsync<List<Proveedor>>() ?? new List<Proveedor>();
+
+        var estadoNormalizado = string.IsNullOrWhiteSpace(estado) ? "activos" : estado.Trim().ToLowerInvariant();
+
+        if (estadoNormalizado == "activos")
+        {
+            proveedores = proveedores.Where(x => x.Activo).ToList();
+        }
+        else if (estadoNormalizado == "inactivos")
+        {
+            proveedores = proveedores.Where(x => !x.Activo).ToList();
+        }
+        // Si es "todos", no se filtra por el campo Activo
+
+        if (!string.IsNullOrWhiteSpace(buscar))
+        {
+            var termino = buscar.Trim();
+            proveedores = proveedores.Where(x =>
+                (!string.IsNullOrEmpty(x.Nombre) && x.Nombre.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(x.Apellido) && x.Apellido.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(x.CuilCuit) && x.CuilCuit.Contains(termino, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(x.Correo) && x.Correo.Contains(termino, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+        }
+
+        ViewBag.Buscar = buscar;
+        ViewBag.Estado = estadoNormalizado;
+
         return View(proveedores);
     }
 
