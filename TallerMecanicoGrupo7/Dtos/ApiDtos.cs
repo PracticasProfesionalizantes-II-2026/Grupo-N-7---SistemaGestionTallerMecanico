@@ -631,3 +631,39 @@ public class SesionCajaWriteDto
     public DateTime FechaFin { get; set; }
     public bool Vigente { get; set; } = true;
 }
+
+// ---- Reportes ----
+
+public class ReporteTurnosReadDto
+{
+    public DateTime FechaInicio { get; set; }
+    public DateTime FechaFin { get; set; }
+    public int TotalTurnos { get; set; }
+    public int TotalProgramados { get; set; }
+    public int TotalReparaciones { get; set; }
+    public List<ReporteTurnosPuntoReadDto> Serie { get; set; } = new();
+}
+
+public class ReporteTurnosPuntoReadDto
+{
+    public DateTime Fecha { get; set; }
+    public int Programados { get; set; }
+    public int Reparaciones { get; set; }
+}
+
+public class ReporteCajaReadDto
+{
+    public DateTime FechaInicio { get; set; }
+    public DateTime FechaFin { get; set; }
+    public decimal TotalIngresos { get; set; }
+    public decimal TotalEgresos { get; set; }
+    public decimal Balance { get; set; }
+    public List<ReporteCajaPuntoReadDto> Serie { get; set; } = new();
+}
+
+public class ReporteCajaPuntoReadDto
+{
+    public DateTime Periodo { get; set; }
+    public decimal Ingresos { get; set; }
+    public decimal Egresos { get; set; }
+}

@@ -18,7 +18,7 @@ namespace ClasesTallerMecanico.Models
         public int IdMaquina { get; set; }
         public Maquina Maquina { get; set; } // Relacion 1 a 1 con Maquina
 
-        [ForeignKey("TipoTurno")]
+        [ForeignKey("Tipo")]
         public int? IdTipoTurno { get; set; }
         public TipoTurno? Tipo { get; set; } // Relacion 1 a 1 con TipoTurno
 
