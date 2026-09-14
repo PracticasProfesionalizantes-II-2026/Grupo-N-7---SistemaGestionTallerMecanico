@@ -6,6 +6,19 @@ public class HomeDashboardViewModel
     public int TurnosPendientes { get; set; }
     public int FacturasPendientesDePago { get; set; }
 
+    // Alerta de stock bajo: nombres de los insumos activos cuyo stock llegó
+    // al umbral mínimo (2 unidades), sin importar de cuál se trate.
+    public List<string> InsumosStockBajo { get; set; } = new();
+
+    public bool HayInsumosConStockBajo => InsumosStockBajo.Count > 0;
+
+    public string MensajeStockBajo => InsumosStockBajo.Count switch
+    {
+        0 => string.Empty,
+        1 => $"Atención: stock bajo de {InsumosStockBajo[0]}",
+        _ => $"Atención: stock bajo en {InsumosStockBajo.Count} insumos ({string.Join(", ", InsumosStockBajo)})"
+    };
+
     // Donut "Total turnos": turnos en curso (no finalizados) sobre el total histórico,
     // sin restricción de fecha.
     public int TurnosEnCurso { get; set; }

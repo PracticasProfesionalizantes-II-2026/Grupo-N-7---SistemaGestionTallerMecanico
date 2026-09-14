@@ -174,18 +174,22 @@ else
                                             <input type="hidden" name="IdTrabajoTurno" value="@trabajo.Id" />
                                             <div class="row g-2">
                                                 <div class="col-md-5">
-                                                    <select name="IdInsumo" class="form-select">
+                                                    <select name="IdInsumo" class="form-select js-insumo-select"
+                                                            data-insumo-original="@insumo.IdInsumo" data-cantidad-actual="@insumo.Cantidad">
                                                         @foreach (var i in Model.InsumosDisponibles)
                                                         {
-                                                            <option value="@i.Id" selected="@(i.Id == insumo.IdInsumo)">@i.Nombre</option>
+                                                            <option value="@i.Id" data-stock="@i.Stock" selected="@(i.Id == insumo.IdInsumo)">@i.Nombre</option>
                                                         }
                                                     </select>
                                                 </div>
                                                 <div class="col-md-3">
-                                                    <input type="number" name="Cantidad" class="form-control" value="@insumo.Cantidad" placeholder="Cantidad" />
+                                                    <input type="number" name="Cantidad" class="form-control js-insumo-cantidad" value="@insumo.Cantidad" placeholder="Cantidad" />
                                                 </div>
                                                 <div class="col-md-2">
                                                     <button type="submit" class="btn btn-primary w-100">OK</button>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="js-stock-warning text-warning small mt-1 d-none"></div>
                                                 </div>
                                             </div>
                                         </form>
@@ -208,19 +212,22 @@ else
                             <input type="hidden" name="IdTrabajoTurno" value="@trabajo.Id" />
                             <div class="row g-2">
                                 <div class="col-md-6">
-                                    <select name="IdInsumo" class="form-select">
+                                    <select name="IdInsumo" class="form-select js-insumo-select">
                                         <option value="">Seleccione un insumo</option>
                                         @foreach (var i in Model.InsumosDisponibles)
                                         {
-                                            <option value="@i.Id">@i.Nombre</option>
+                                            <option value="@i.Id" data-stock="@i.Stock">@i.Nombre</option>
                                         }
                                     </select>
                                 </div>
                                 <div class="col-md-3">
-                                    <input type="number" name="Cantidad" class="form-control" placeholder="Cantidad" />
+                                    <input type="number" name="Cantidad" class="form-control js-insumo-cantidad" placeholder="Cantidad" />
                                 </div>
                                 <div class="col-md-3">
                                     <button type="submit" class="btn btn-success w-100">Agregar</button>
+                                </div>
+                                <div class="col-12">
+                                    <div class="js-stock-warning text-warning small mt-1 d-none"></div>
                                 </div>
                             </div>
                         </form>
