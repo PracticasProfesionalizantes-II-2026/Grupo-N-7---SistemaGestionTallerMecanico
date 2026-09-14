@@ -86,6 +86,10 @@
             }
             evento.preventDefault();
 
+            if (form.dataset.confirm && !confirm(form.dataset.confirm)) {
+                return;
+            }
+
             if (form.querySelector('.js-insumo-cantidad') && !validarStockForm(form)) {
                 return;
             }

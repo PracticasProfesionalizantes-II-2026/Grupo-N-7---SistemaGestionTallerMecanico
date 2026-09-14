@@ -189,6 +189,35 @@ public class InsumosPorTrabajoController : Controller
             : PartialView("~/Views/Turnos/_GestionContenido.cshtml", modelo);
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EliminarAjax(int id, int idTrabajoTurno)
+    {
+        var trabajo = await ObtenerTrabajoPorTurnoAsync(idTrabajoTurno);
+        if (trabajo is null)
+        {
+            return NotFound();
+        }
+
+        var builder = new GestionTurnoBuilder(_httpClient);
+        if (await builder.EstaBloqueadoAsync(trabajo.IdTurno))
+        {
+            return await ContenidoConErrorAsync(builder, trabajo.IdTurno, "El turno está cerrado o tiene una factura pagada y no admite cambios.");
+        }
+
+        var response = await _httpClient.DeleteAsync($"api/insumos-por-trabajo/{id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            return await ContenidoConErrorAsync(builder, trabajo.IdTurno, $"No se pudo eliminar el material. Detalle: {errorContent}");
+        }
+
+        var modelo = await builder.ConstruirAsync(trabajo.IdTurno);
+        return modelo is null
+            ? NotFound()
+            : PartialView("~/Views/Turnos/_GestionContenido.cshtml", modelo);
+    }
+
     private async Task<IActionResult> ContenidoConErrorAsync(GestionTurnoBuilder builder, int idTurno, string error)
     {
         var modelo = await builder.ConstruirAsync(idTurno);

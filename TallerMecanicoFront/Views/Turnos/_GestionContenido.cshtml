@@ -1,6 +1,17 @@
 @model TallerMecanicoFront.Models.TurnoGestionViewModel
 @{
     var bloqueado = !Model.PuedeEditar;
+
+    // Evita repetir el mismo @foreach de insumos en el form de editar y en el
+    // de agregar material: ambos necesitan las mismas opciones con su stock.
+    async Task RenderOpcionesInsumoAsync(int? seleccionado)
+    {
+        foreach (var i in Model.InsumosDisponibles)
+        {
+            var estaSeleccionado = seleccionado.HasValue && i.Id == seleccionado.Value;
+            <option value="@i.Id" data-stock="@i.Stock" selected="@estaSeleccionado">@i.Nombre</option>
+        }
+    }
 }
 
 @if (!string.IsNullOrWhiteSpace(Model.Error))
@@ -159,7 +170,17 @@ else
                                 <td class="text-end">
                                     @if (!bloqueado)
                                     {
-                                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#formInsumo-@insumo.Id">Editar</button>
+                                        <div class="d-flex gap-1 justify-content-end">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#formInsumo-@insumo.Id">Editar</button>
+                                            <form class="form-ajax-gestion d-inline" method="post"
+                                                  action="/InsumosPorTrabajo/EliminarAjax" data-idturno="@Model.Turno.Id"
+                                                  data-confirm="¿Eliminar este material del trabajo?">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@insumo.Id" />
+                                                <input type="hidden" name="idTrabajoTurno" value="@trabajo.Id" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                            </form>
+                                        </div>
                                     }
                                 </td>
                             </tr>
@@ -169,17 +190,14 @@ else
                                     <td colspan="3">
                                         <form class="form-ajax-gestion" method="post"
                                               action="/InsumosPorTrabajo/GuardarAjax" data-idturno="@Model.Turno.Id">
-                    @Html.AntiForgeryToken()
+                                            @Html.AntiForgeryToken()
                                             <input type="hidden" name="Id" value="@insumo.Id" />
                                             <input type="hidden" name="IdTrabajoTurno" value="@trabajo.Id" />
                                             <div class="row g-2">
                                                 <div class="col-md-5">
                                                     <select name="IdInsumo" class="form-select js-insumo-select"
                                                             data-insumo-original="@insumo.IdInsumo" data-cantidad-actual="@insumo.Cantidad">
-                                                        @foreach (var i in Model.InsumosDisponibles)
-                                                        {
-                                                            <option value="@i.Id" data-stock="@i.Stock" selected="@(i.Id == insumo.IdInsumo)">@i.Nombre</option>
-                                                        }
+                                                        @{ await RenderOpcionesInsumoAsync(insumo.IdInsumo); }
                                                     </select>
                                                 </div>
                                                 <div class="col-md-3">
@@ -207,17 +225,14 @@ else
                     <div class="collapse mt-3" id="formNuevoInsumo-@trabajo.Id">
                         <form class="form-ajax-gestion border-top pt-3" method="post"
                               action="/InsumosPorTrabajo/GuardarAjax" data-idturno="@Model.Turno.Id">
-                    @Html.AntiForgeryToken()
+                            @Html.AntiForgeryToken()
                             <input type="hidden" name="Id" value="0" />
                             <input type="hidden" name="IdTrabajoTurno" value="@trabajo.Id" />
                             <div class="row g-2">
                                 <div class="col-md-6">
                                     <select name="IdInsumo" class="form-select js-insumo-select">
                                         <option value="">Seleccione un insumo</option>
-                                        @foreach (var i in Model.InsumosDisponibles)
-                                        {
-                                            <option value="@i.Id" data-stock="@i.Stock">@i.Nombre</option>
-                                        }
+                                        @{ await RenderOpcionesInsumoAsync(null); }
                                     </select>
                                 </div>
                                 <div class="col-md-3">
