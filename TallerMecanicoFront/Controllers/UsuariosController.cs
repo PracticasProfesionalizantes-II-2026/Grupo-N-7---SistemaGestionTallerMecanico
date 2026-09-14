@@ -91,11 +91,9 @@ public class UsuariosController : Controller
         if (Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
 
-        // Un mecánico entra directo a Turnos: no tiene sentido mandarlo al dashboard
-        // administrativo si de ahí no va a poder navegar a ningún otro lado.
-        if (RestringirAccesoMecanicoFilter.EsMecanico(nombreRol))
-            return RedirectToAction("Index", "Turnos");
-
+        // Home ahora es una vista permitida para cualquier rol (ver
+        // RestringirAccesoMecanicoFilter), así que todos entran ahí después
+        // del login, sin excepciones por rol.
         return RedirectToAction("Index", "Home");
     }
 
