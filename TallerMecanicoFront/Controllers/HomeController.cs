@@ -14,11 +14,16 @@ public class HomeController : Controller
         _httpClient = httpClientFactory.CreateClient("TallerApi");
     }
 
+    // Umbral a partir del cual un insumo se considera "stock bajo" para la
+    // alerta de la home (no depende de cuál insumo sea, aplica a cualquiera).
+    private const int UmbralStockBajo = 2;
+
     public async Task<IActionResult> Index()
     {
         var turnos = await _httpClient.GetFromJsonAsync<List<Turno>>("api/turnos") ?? new List<Turno>();
         var estadosTurno = await _httpClient.GetFromJsonAsync<List<EstadoTurno>>("api/estados-turno") ?? new List<EstadoTurno>();
         var facturasVentas = await _httpClient.GetFromJsonAsync<List<FacturaVenta>>("api/facturas-ventas") ?? new List<FacturaVenta>();
+        var insumos = await _httpClient.GetFromJsonAsync<List<Insumo>>("api/insumos") ?? new List<Insumo>();
 
         // Los estados son texto libre (sin código fijo), por eso se identifican por nombre.
         var idsEstadosPendiente = estadosTurno
@@ -48,7 +53,12 @@ public class HomeController : Controller
             FacturasPendientesDePago = facturasVentas.Count(f => !f.Pagado),
             TurnosEnCurso = turnosEnCurso,
             TurnosSemana = turnosSemana.Count,
-            TurnosSemanaPendientes = turnosSemanaPendientes
+            TurnosSemanaPendientes = turnosSemanaPendientes,
+            InsumosStockBajo = insumos
+                .Where(i => i.Activo && i.Stock <= UmbralStockBajo)
+                .OrderBy(i => i.Stock)
+                .Select(i => i.Nombre)
+                .ToList()
         };
 
         return View(modelo);

@@ -15,8 +15,8 @@
             <form asp-action="Create" method="post">
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                 <div class="row g-3">
-                    <div class="col-md-6"><label asp-for="IdCliente" class="form-label">Cliente</label><div class="input-group"><select asp-for="IdCliente" class="form-select" required><option value="">Seleccione un cliente</option>@foreach (var cliente in clientes){<option value="@cliente.Id">@cliente.Apellido, @cliente.Nombre</option>}</select><a asp-controller="Clientes" asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary" title="Agregar cliente">Nuevo</a></div><span asp-validation-for="IdCliente" class="text-danger"></span></div>
-                    <div class="col-md-6"><label asp-for="IdTurno" class="form-label">Turno</label><select asp-for="IdTurno" class="form-select" required><option value="">Seleccione un turno</option>@foreach (var turno in turnos){<option value="@turno.Id">#@turno.Id - @turno.Fecha.ToString("dd/MM/yyyy HH:mm")</option>}</select><span asp-validation-for="IdTurno" class="text-danger"></span></div>
+                    <div class="col-md-6"><label asp-for="IdCliente" class="form-label">Cliente</label><input asp-for="IdCliente" type="hidden" id="IdCliente" /><select id="clienteDisplay" class="form-select" disabled><option value="">Seleccione primero un turno</option>@foreach (var cliente in clientes){<option value="@cliente.Id">@cliente.Apellido, @cliente.Nombre</option>}</select><span asp-validation-for="IdCliente" class="text-danger"></span></div>
+                    <div class="col-md-6"><label asp-for="IdTurno" class="form-label">Turno</label><select asp-for="IdTurno" class="form-select" id="turnoSelect" required><option value="">Seleccione un turno</option>@foreach (var turno in turnos){<option value="@turno.Id" data-cliente="@turno.IdCliente">#@turno.Id - @turno.Fecha.ToString("dd/MM/yyyy HH:mm")</option>}</select><span asp-validation-for="IdTurno" class="text-danger"></span></div>
                     <div class="col-md-6"><label asp-for="IdSesionCaja" class="form-label">Sesión de caja</label><div class="input-group"><select asp-for="IdSesionCaja" class="form-select" required><option value="">Seleccione una sesión</option>@foreach (var sesion in sesiones){<option value="@sesion.Id">#@sesion.Id - @sesion.FechaInicio.ToString("dd/MM/yyyy HH:mm")</option>}</select><a asp-controller="SesionesCaja" asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary" title="Agregar sesión de caja">Nueva</a></div><span asp-validation-for="IdSesionCaja" class="text-danger"></span></div>
                     <div class="col-md-6"><label asp-for="IdFormaPago" class="form-label">Forma de pago</label><div class="input-group"><select asp-for="IdFormaPago" class="form-select" required><option value="">Seleccione una forma de pago</option>@foreach (var forma in formasPago){<option value="@forma.Id">@forma.Nombre</option>}</select><a asp-controller="FormasPago" asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary" title="Agregar forma de pago">Nueva</a></div><span asp-validation-for="IdFormaPago" class="text-danger"></span></div>
                     <div class="col-md-4"><label asp-for="FechaEmision" class="form-label">Fecha de emisión</label><input asp-for="FechaEmision" type="date" class="form-control" required /><span asp-validation-for="FechaEmision" class="text-danger"></span></div>
@@ -41,5 +41,27 @@
 
         fechaPago.addEventListener("change", sincronizarPago);
         sincronizarPago();
+
+        // Autocompletar el cliente a partir del turno seleccionado.
+        // El cliente ya queda definido al reservar el turno, por lo que
+        // acá solo se refleja (no se vuelve a elegir) para evitar
+        // inconsistencias entre el turno y la factura.
+        const turnoSelect = document.getElementById("turnoSelect");
+        const idClienteHidden = document.getElementById("IdCliente");
+        const clienteDisplay = document.getElementById("clienteDisplay");
+
+        function autocompletarCliente() {
+            const opcionTurno = turnoSelect.options[turnoSelect.selectedIndex];
+            const idCliente = opcionTurno?.dataset.cliente || "";
+
+            idClienteHidden.value = idCliente;
+            clienteDisplay.value = idCliente || "";
+            if (!idCliente) {
+                clienteDisplay.selectedIndex = 0;
+            }
+        }
+
+        turnoSelect.addEventListener("change", autocompletarCliente);
+        autocompletarCliente();
     </script>
 }

@@ -17,14 +17,78 @@
 
 @section Scripts {
     <script>
+        // Calcula el stock disponible de la opción seleccionada y bloquea el envío
+        // del form si la cantidad cargada lo supera, mostrando un aviso en amarillo
+        // con el stock que queda en ese momento.
+        function validarStockForm(form) {
+            if (!form) return;
+
+            var select = form.querySelector('.js-insumo-select');
+            var cantidadInput = form.querySelector('.js-insumo-cantidad');
+            var advertencia = form.querySelector('.js-stock-warning');
+            var boton = form.querySelector('button[type="submit"]');
+            if (!select || !cantidadInput || !advertencia) return;
+
+            var opcion = select.options[select.selectedIndex];
+            var stock = opcion ? (Number.parseInt(opcion.dataset.stock, 10) || 0) : 0;
+
+            // Si es el mismo insumo que ya estaba cargado en este renglón (form de
+            // edición), la cantidad actual no debe contarse en contra: esas unidades
+            // ya están "reservadas" por este mismo registro.
+            var esInsumoOriginal = select.dataset.insumoOriginal && opcion && opcion.value === select.dataset.insumoOriginal;
+            var cantidadActual = esInsumoOriginal ? (Number.parseFloat(select.dataset.cantidadActual) || 0) : 0;
+            var disponible = stock + cantidadActual;
+
+            var cantidad = Number.parseFloat(String(cantidadInput.value).replace(',', '.')) || 0;
+
+            if (opcion && opcion.value && cantidad > disponible) {
+                advertencia.textContent = 'Stock bajo: solo quedan ' + stock + ' unidad(es) disponibles de este insumo.';
+                advertencia.classList.remove('d-none');
+                cantidadInput.classList.add('is-invalid');
+                if (boton) { boton.disabled = true; }
+                return false;
+            }
+
+            advertencia.classList.add('d-none');
+            cantidadInput.classList.remove('is-invalid');
+            if (boton) { boton.disabled = false; }
+            return true;
+        }
+
+        function inicializarValidacionesStock(contenedor) {
+            contenedor.querySelectorAll('.form-ajax-gestion').forEach(function (form) {
+                if (form.querySelector('.js-insumo-cantidad')) {
+                    validarStockForm(form);
+                }
+            });
+        }
+
+        var contenido = document.getElementById('contenido');
+
+        contenido.addEventListener('input', function (evento) {
+            if (evento.target.classList.contains('js-insumo-cantidad')) {
+                validarStockForm(evento.target.closest('form'));
+            }
+        });
+
+        contenido.addEventListener('change', function (evento) {
+            if (evento.target.classList.contains('js-insumo-select')) {
+                validarStockForm(evento.target.closest('form'));
+            }
+        });
+
         // Delegado en #contenido (no en cada form) para que siga funcionando
         // después de que el contenido se reemplace por la respuesta del fetch.
-        document.getElementById('contenido').addEventListener('submit', async function (evento) {
+        contenido.addEventListener('submit', async function (evento) {
             var form = evento.target;
             if (!form.classList.contains('form-ajax-gestion')) {
                 return;
             }
             evento.preventDefault();
+
+            if (form.querySelector('.js-insumo-cantidad') && !validarStockForm(form)) {
+                return;
+            }
 
             var boton = form.querySelector('button[type="submit"]');
             if (boton) { boton.disabled = true; }
@@ -35,10 +99,13 @@
                     body: new FormData(form)
                 });
                 var html = await respuesta.text();
-                document.getElementById('contenido').innerHTML = html;
+                contenido.innerHTML = html;
+                inicializarValidacionesStock(contenido);
             } catch (error) {
                 if (boton) { boton.disabled = false; }
             }
         });
+
+        inicializarValidacionesStock(contenido);
     </script>
 }
