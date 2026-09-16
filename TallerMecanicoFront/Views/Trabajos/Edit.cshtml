@@ -26,7 +26,7 @@
                                         <option value="@categoria.Id">@categoria.Categoria</option>
                                     }
                                 </select>
-                                <a asp-controller="CategoriasTrabajos" asp-action="Create" asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString" class="btn btn-outline-secondary" title="Agregar categoría">Nueva</a>
+                                <a asp-controller="CategoriasTrabajos" asp-action="Create" asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString" class="btn btn-outline-secondary" title="Agregar categoría"><i class="bi bi-plus-circle-fill"></i></a>
                             </div>
                             <span asp-validation-for="IdCategoria" class="text-danger"></span>
                         </div>

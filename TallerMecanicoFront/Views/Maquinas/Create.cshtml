@@ -50,7 +50,7 @@
                                         <option value="@cliente.Id">@cliente.Apellido, @cliente.Nombre</option>
                                     }
                                 </select>
-                                <a asp-controller="Clientes" asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary" title="Agregar cliente">Nuevo</a>
+                                <a asp-controller="Clientes" asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary" title="Agregar cliente"><i class="bi bi-person-fill-add"></i></a>
                             </div>
                             <span asp-validation-for="IdCliente" class="text-danger"></span>
                         </div>

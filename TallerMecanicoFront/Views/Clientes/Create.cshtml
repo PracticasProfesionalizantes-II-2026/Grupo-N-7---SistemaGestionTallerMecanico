@@ -40,7 +40,7 @@
                                         <option value="@localidad.Id">@localidad.Nombre - @localidad.Provincia</option>
                                     }
                                 </select>
-                                <a asp-controller="Localidades" asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary" title="Agregar localidad">Nueva</a>
+                                <a asp-controller="Localidades" asp-action="Create" asp-route-returnUrl="@Context.Request.Path" class="btn btn-outline-secondary" title="Agregar localidad"><i class="bi bi-building-fill-add"></i></a>
                             </div>
                             <span asp-validation-for="IdLocalidad" class="text-danger"></span>
                         </div>

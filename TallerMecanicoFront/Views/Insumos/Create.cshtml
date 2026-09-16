@@ -48,7 +48,7 @@
                                         <option value="@proveedor.Id">@proveedor.Apellido, @proveedor.Nombre</option>
                                     }
                                 </select>
-                                <a asp-controller="Proveedores" asp-action="Create" asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString" class="btn btn-outline-secondary" title="Agregar proveedor">Nuevo</a>
+                                <a asp-controller="Proveedores" asp-action="Create" asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString" class="btn btn-outline-secondary" title="Agregar proveedor"><i class="bi bi-person-fill-add"></i></a>
                             </div>
                             <span asp-validation-for="IdProveedor" class="text-danger"></span>
                         </div>
