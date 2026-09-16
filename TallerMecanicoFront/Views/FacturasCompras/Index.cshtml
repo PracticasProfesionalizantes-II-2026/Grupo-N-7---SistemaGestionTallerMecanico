@@ -13,7 +13,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Facturas de Compra</h1>
-    <a asp-action="Create" class="btn btn-primary">Nueva Factura</a>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-circle-fill"></i> Nueva Factura</a>
 </div>
 
 @if (TempData["Error"] is not null)
@@ -106,7 +106,7 @@
                                 <a asp-controller="DetallesFacturasCompras" asp-action="Details" asp-route-facturaId="@item.Id" class="btn btn-sm btn-outline-success">Ver detalle</a>
                                 @if (!item.Pagado)
                                 {
-                                    <a asp-controller="DetallesFacturasCompras" asp-action="Create" asp-route-facturaId="@item.Id" class="btn btn-sm btn-outline-success">Agregar detalle</a>
+                                    <a asp-controller="DetallesFacturasCompras" asp-action="Create" asp-route-facturaId="@item.Id" class="btn btn-sm btn-outline-success"><i class="bi bi-plus-circle-fill"></i> Agregar detalle</a>
                                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
                                     <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
                                         <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar esta factura de compra?');">Eliminar</button>

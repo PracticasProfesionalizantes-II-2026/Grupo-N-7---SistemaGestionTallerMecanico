@@ -11,13 +11,19 @@ namespace TallerMecanicoFront.Infrastructure;
 /// que es donde de verdad importa la seguridad.
 ///
 /// Hay dos niveles:
-/// - Admin: sin restricciones, pasa todo (como venía funcionando hasta ahora).
-/// - Cualquier otro rol (Mecánico incluido): puede entrar a Home, Máquinas,
-///   Clientes y Turnos. Insumos, Usuarios y el resto quedan fuera. Además de
-///   esas 4 pantallas completas, hay acciones puntuales de OTROS controladores
-///   que esas mismas vistas necesitan invocar (botones "Nuevo X" y los AJAX de
-///   Turnos/Gestionar), así que se habilitan una por una en vez de abrir el
-///   controlador entero.
+/// - Admin (dueño): sin restricciones, pasa todo (como venía funcionando
+///   hasta ahora). Es el único que puede hacer ABM de Insumos, Proveedores y
+///   Usuarios, y el único que puede ver el reporte de Caja (ingresos/egresos).
+/// - Cualquier otro rol (Mecánico incluido): según los requerimientos
+///   funcionales, el mecánico tiene ABM completo de Máquinas, Clientes y
+///   Turnos (y puede consultar/filtrar reparaciones actuales e históricas),
+///   así que puede entrar a Home, Máquinas, Clientes y Turnos enteros.
+///   Insumos, Proveedores, Usuarios y el reporte de Caja quedan fuera.
+///   Además de esas 4 pantallas completas, hay acciones puntuales de OTROS
+///   controladores que esas mismas vistas necesitan invocar (botones
+///   "Nuevo X", los AJAX de Turnos/Gestionar para registrar reparaciones, y
+///   el reporte de Turnos), así que se habilitan una por una en vez de abrir
+///   el controlador entero.
 /// </summary>
 public class RestringirAccesoMecanicoFilter : IAsyncActionFilter
 {
@@ -36,9 +42,10 @@ public class RestringirAccesoMecanicoFilter : IAsyncActionFilter
         "Home", "Maquinas", "Clientes", "Turnos",
     };
 
-    // Botones "Nuevo X" dentro de Turnos/Clientes, y los AJAX de Turnos/Gestionar
-    // (carga de detalles, trabajos e insumos de un turno). No abren el controlador
-    // entero: solo estas acciones puntuales.
+    // Botones "Nuevo X" dentro de Turnos/Clientes, los AJAX de Turnos/Gestionar
+    // (carga de detalles, trabajos e insumos de un turno, es decir, el registro
+    // de reparaciones) y el reporte de Turnos (reparaciones actuales e
+    // históricas). No abren el controlador entero: solo estas acciones puntuales.
     private static readonly HashSet<(string Controlador, string Accion)> AccionesPuntualesNoAdmin = new()
     {
         ("TiposTurno", "Create"),
@@ -48,6 +55,7 @@ public class RestringirAccesoMecanicoFilter : IAsyncActionFilter
         ("TrabajosPorTurno", "GuardarAjax"),
         ("InsumosPorTrabajo", "GuardarAjax"),
         ("InsumosPorTrabajo", "EliminarAjax"),
+        ("Reportes", "Turnos"),
     };
 
     public static bool EsAdmin(string? nombreRol) =>
