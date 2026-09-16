@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TallerMecanicoFront</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/sidebar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/TallerMecanicoFront.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="d-flex">
+        <nav class="sidebar d-flex flex-column" id="sidebar">
+            <div class="perfil">
+                <div class="avatar"><i class="bi bi-person-fill"></i></div>
+                <div class="nombre">@(User.Identity?.Name ?? "Invitado")</div>
+                <div class="fecha">@DateTime.Now.ToString("dd/MM/yyyy")</div>
+            </div>
+
+            <div class="flex-grow-1 py-2">
+                @{
+                    var nombreRol = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                    var esAdmin = TallerMecanicoFront.Infrastructure.RestringirAccesoMecanicoFilter.EsAdmin(nombreRol);
+                }
+                @if (!esAdmin)
+                {
+                    <a class="nav-link" asp-controller="Home" asp-action="Index">
+                        <i class="bi bi-house-door-fill"></i> Home
+                    </a>
+                    <a class="nav-link" asp-controller="Maquinas" asp-action="Index">
+                        <i class="bi bi-tools"></i> Máquinas
+                    </a>
+                    <a class="nav-link" asp-controller="Clientes" asp-action="Index">
+                        <i class="bi bi-people-fill"></i> Clientes
+                    </a>
+                    <a class="nav-link" asp-controller="Turnos" asp-action="Index">
+                        <i class="bi bi-calendar3"></i> Turnos
+                    </a>
+                    <a class="nav-link" asp-controller="Reportes" asp-action="Turnos">
+                        <i class="bi bi-graph-up"></i> Reportes
+                    </a>
+                }
+                else
+                {
+                    <a class="nav-link" asp-controller="Home" asp-action="Index">
+                        <i class="bi bi-house-door-fill"></i> Home
+                    </a>
+
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="collapse" href="#menuUsuarios" role="button" aria-expanded="false">
+                        <i class="bi bi-people-fill"></i> Usuarios
+                    </a>
+                    <div class="collapse" id="menuUsuarios">
+                        <a class="nav-link" asp-controller="Usuarios" asp-action="Index">Usuarios</a>
+                        <a class="nav-link" asp-controller="Roles" asp-action="Index">Roles</a>
+                        <a class="nav-link" asp-controller="Localidades" asp-action="Index">Localidades</a>
+                        <a class="nav-link" asp-controller="SesionesCaja" asp-action="Index">Sesiones de Caja</a>
+                        <a class="nav-link" asp-controller="Clientes" asp-action="Index">Clientes</a>
+                        <a class="nav-link" asp-controller="proveedores" asp-action="Index">Proveedores</a>
+                    </div>
+
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="collapse" href="#menuTrabajos" role="button" aria-expanded="false">
+                        <i class="bi bi-tools"></i> Trabajos
+                    </a>
+                    <div class="collapse" id="menuTrabajos">
+                        <a class="nav-link" asp-controller="CategoriasTrabajos" asp-action="Index">Categorías de Trabajo</a>
+                        <a class="nav-link" asp-controller="Trabajos" asp-action="Index">Tipos de Trabajo</a>
+                        <a class="nav-link" asp-controller="Maquinas" asp-action="Index">Máquinas</a>
+                        <a class="nav-link" asp-controller="Insumos" asp-action="Index">Insumos</a>
+                    </div>
+
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="collapse" href="#menuTurnos" role="button" aria-expanded="false">
+                        <i class="bi bi-calendar3"></i> Turnos
+                    </a>
+                    <div class="collapse" id="menuTurnos">
+                        <a class="nav-link" asp-controller="TiposTurno" asp-action="Index">Tipos de Turno</a>
+                        <a class="nav-link" asp-controller="EstadosTurno" asp-action="Index">Estados de Turno</a>
+                        <a class="nav-link" asp-controller="Turnos" asp-action="Index">Turnos</a>
+                    </div>
+
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="collapse" href="#menuFacturas" role="button" aria-expanded="false">
+                        <i class="bi bi-cash-coin"></i> Facturas
+                    </a>
+                    <div class="collapse" id="menuFacturas">
+                        <a class="nav-link" asp-controller="FormasPago" asp-action="Index">Formas de Pago</a>
+                        <a class="nav-link" asp-controller="FacturasCompras" asp-action="Index">Facturas de Compras</a>
+                        <a class="nav-link" asp-controller="FacturasVentas" asp-action="Index">Facturas de Ventas</a>
+                    </div>
+
+                    <a class="nav-link" asp-controller="Reportes" asp-action="Index">
+                        <i class="bi bi-graph-up"></i> Reportes
+                    </a>
+
+                    <a class="nav-link" asp-controller="Home" asp-action="Privacy">
+                        <i class="bi bi-shield-lock"></i> Privacy
+                    </a>
+                }
+            </div>
+
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <form asp-controller="Usuarios" asp-action="Logout" method="post" class="mb-2">
+                    <button type="submit" class="nav-link">
+                        <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+                    </button>
+                </form>
+            }
+        </nav>
+
+        <div class="main-content">
+            @{
+                var esHomeIndex = string.Equals(ViewContext.RouteData.Values["controller"]?.ToString(), "Home", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(ViewContext.RouteData.Values["action"]?.ToString(), "Index", StringComparison.OrdinalIgnoreCase);
+            }
+            <!-- <div class="main-topbar d-flex justify-content-between align-items-center">
+                <button class="btn btn-sm btn-outline-secondary d-md-none" id="botonToggleSidebar" type="button">
+                    <i class="bi bi-list"></i>
+                </button>
+                <span>@ViewData["Title"]</span>
+            </div> -->
+            <div class="container-fluid px-4 pb-4">
+                <main role="main" class="@(esHomeIndex ? "" : "content-card")">
+                    @RenderBody()
+                </main>
+            </div>
+            <!-- <footer class="text-muted px-4 pb-3">
+                &copy; 2026 - TallerMecanicoFront - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
+            </footer> -->
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        document.getElementById('botonToggleSidebar')?.addEventListener('click', function () {
+            document.getElementById('sidebar').classList.toggle('abierto');
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
