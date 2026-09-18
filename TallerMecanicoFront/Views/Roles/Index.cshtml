@@ -24,6 +24,7 @@
             <tr>
                 <th>Id</th>
                 <th>Nombre</th>
+                <th>Acceso</th>
                 <th class="text-end">Acciones</th>
             </tr>
         </thead>
@@ -35,6 +36,16 @@
                     <tr>
                         <td>@item.Id</td>
                         <td>@item.Nombre</td>
+                        <td>
+                            @if (item.EsAdmin)
+                            {
+                                <span class="badge bg-primary">Total</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Restringido</span>
+                            }
+                        </td>
                         <td class="text-end">
                             <div class="d-inline-flex gap-2">
                                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
@@ -51,7 +62,7 @@
             else
             {
                 <tr>
-                    <td colspan="3" class="text-center text-muted py-4">No hay roles registrados.</td>
+                    <td colspan="4" class="text-center text-muted py-4">No hay roles registrados.</td>
                 </tr>
             }
         </tbody>

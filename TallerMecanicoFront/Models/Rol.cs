@@ -9,4 +9,7 @@ public class Rol
     [Required(ErrorMessage = "El nombre es requerido.")]
     [MaxLength(50)]
     public string Nombre { get; set; } = string.Empty;
+
+    [Display(Name = "Acceso total (administrador)")]
+    public bool EsAdmin { get; set; }
 }

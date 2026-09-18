@@ -1,5 +1,6 @@
 using ClasesTallerMecanico.Datos;
 using ClasesTallerMecanico.Models;
+using ClasesTallerMecanico.Seguridad;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClasesTallerMecanico.Repositorios;
@@ -25,16 +26,32 @@ public class UsuariosRepositorio : IUsuariosRepositorio
 
     public async Task<Usuario?> GetUsuarioByCredencialesAsync(string correo, string contrasena)
     {
-        return await _context.Usuarios
-            .AsNoTracking()
-            .FirstOrDefaultAsync(usuario =>
-                usuario.Correo == correo &&
-                usuario.ContraseñaHash == contrasena &&
-                usuario.Activo);
+        var usuario = await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.Correo == correo && u.Activo);
+
+        if (usuario is null)
+            return null;
+
+        if (!PasswordHelper.VerifyPassword(contrasena, usuario.ContraseñaHash))
+            return null;
+
+        // Rehash on next login: si la contraseña estaba guardada en texto plano, la actualizamos automáticamente a SHA-256
+        if (!PasswordHelper.IsHashed(usuario.ContraseñaHash))
+        {
+            usuario.ContraseñaHash = PasswordHelper.HashPassword(contrasena);
+            await _context.SaveChangesAsync();
+        }
+
+        return usuario;
     }
 
     public async Task AddUsuarioAsync(Usuario usuario)
     {
+        if (!string.IsNullOrEmpty(usuario.ContraseñaHash) && !PasswordHelper.IsHashed(usuario.ContraseñaHash))
+        {
+            usuario.ContraseñaHash = PasswordHelper.HashPassword(usuario.ContraseñaHash);
+        }
+
         _context.Usuarios.Add(usuario);
         await _context.SaveChangesAsync();
     }
@@ -48,6 +65,18 @@ public class UsuariosRepositorio : IUsuariosRepositorio
         if (!usuarioExistente.Activo)
         {
             throw new InvalidOperationException("No se puede editar un usuario dado de baja.");
+        }
+
+        if (!string.IsNullOrEmpty(usuario.ContraseñaHash))
+        {
+            if (!PasswordHelper.IsHashed(usuario.ContraseñaHash))
+            {
+                usuario.ContraseñaHash = PasswordHelper.HashPassword(usuario.ContraseñaHash);
+            }
+        }
+        else
+        {
+            usuario.ContraseñaHash = usuarioExistente.ContraseñaHash;
         }
 
         _context.Entry(usuarioExistente).CurrentValues.SetValues(usuario);

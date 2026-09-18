@@ -1,0 +1,59 @@
+@model IEnumerable<TallerMecanicoFront.Models.Auditoria>
+@{
+    ViewData["Title"] = "Auditoría";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Auditoría de acciones</h1>
+</div>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div asp-validation-summary="All" class="alert alert-danger"></div>
+}
+
+<div class="table-responsive tabla-scroll">
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Fecha</th>
+                <th>Usuario</th>
+                <th>Acción</th>
+                <th>Entidad</th>
+                <th>Detalle</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Any())
+            {
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@item.UsuarioNombre</td>
+                        <td>
+                            @{
+                                var claseBadge = item.Accion switch
+                                {
+                                    "Alta" => "bg-success",
+                                    "Modificación" => "bg-warning text-dark",
+                                    "Baja" => "bg-danger",
+                                    _ => "bg-secondary"
+                                };
+                            }
+                            <span class="badge @claseBadge">@item.Accion</span>
+                        </td>
+                        <td>@item.Entidad</td>
+                        <td>@item.Detalle</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">Todavía no hay acciones registradas.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

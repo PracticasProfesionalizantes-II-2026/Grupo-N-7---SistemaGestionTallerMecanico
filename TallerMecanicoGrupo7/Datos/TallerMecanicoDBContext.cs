@@ -11,6 +11,8 @@ namespace ClasesTallerMecanico.Datos
         }
 
         public DbSet<CategoriaTrabajo> CategoriasTrabajos { get; set; }
+        public DbSet<Auditoria> Auditorias { get; set; }
+        public DbSet<Configuracion> Configuraciones { get; set; }
         public DbSet<Cliente> Clientes { get; set; }
         public DbSet<DetalleFacturaCompra> DetallesFacturasCompras { get; set; }
         public DbSet<DetalleFacturaVenta> DetallesFacturasVentas { get; set; }
