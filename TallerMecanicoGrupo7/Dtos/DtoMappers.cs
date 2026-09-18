@@ -37,13 +37,56 @@ public static class DtoMappers
     public static RolReadDto ToReadDto(this Rol source) => new()
     {
         Id = source.Id,
-        Nombre = source.Nombre
+        Nombre = source.Nombre,
+        EsAdmin = source.EsAdmin
     };
 
     public static Rol ToEntity(this RolWriteDto source) => new()
     {
         Id = source.Id,
-        Nombre = source.Nombre
+        Nombre = source.Nombre,
+        EsAdmin = source.EsAdmin
+    };
+
+    public static AuditoriaReadDto ToReadDto(this Auditoria source) => new()
+    {
+        Id = source.Id,
+        Fecha = source.Fecha,
+        UsuarioId = source.UsuarioId,
+        UsuarioNombre = source.UsuarioNombre,
+        Accion = source.Accion,
+        Entidad = source.Entidad,
+        EntidadId = source.EntidadId,
+        Detalle = source.Detalle
+    };
+
+    public static Auditoria ToEntity(this AuditoriaCrearDto source) => new()
+    {
+        Fecha = DateTime.Now,
+        UsuarioId = source.UsuarioId,
+        UsuarioNombre = source.UsuarioNombre,
+        Accion = source.Accion,
+        Entidad = source.Entidad,
+        EntidadId = source.EntidadId,
+        Detalle = source.Detalle
+    };
+
+    public static ConfiguracionReadDto ToReadDto(this Configuracion source) => new()
+    {
+        Id = source.Id,
+        NombreTaller = source.NombreTaller,
+        LogoUrl = source.LogoUrl,
+        ColorPrimario = source.ColorPrimario,
+        ColorFondo = source.ColorFondo
+    };
+
+    public static Configuracion ToEntity(this ConfiguracionWriteDto source) => new()
+    {
+        Id = source.Id,
+        NombreTaller = source.NombreTaller,
+        LogoUrl = source.LogoUrl,
+        ColorPrimario = source.ColorPrimario,
+        ColorFondo = source.ColorFondo
     };
 
     public static TipoTurnoReadDto ToReadDto(this TipoTurno source) => new()

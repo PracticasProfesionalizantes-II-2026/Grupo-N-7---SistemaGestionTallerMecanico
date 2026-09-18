@@ -1,9 +1,11 @@
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TallerMecanicoFront.Models;
 
 namespace TallerMecanicoFront.Controllers;
 
+[Authorize(Roles = "Dueño,Administrador")]
 public class RolesController : Controller
 {
     private readonly HttpClient _httpClient;
@@ -46,7 +48,8 @@ public class RolesController : Controller
         var payload = new
         {
             Id = 0,
-            rol.Nombre
+            rol.Nombre,
+            rol.EsAdmin
         };
 
         var response = await _httpClient.PostAsJsonAsync("api/roles", payload);

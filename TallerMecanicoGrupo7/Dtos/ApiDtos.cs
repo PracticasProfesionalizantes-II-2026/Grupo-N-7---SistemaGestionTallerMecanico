@@ -45,6 +45,7 @@ public class RolReadDto
 {
     public int Id { get; set; }
     public string Nombre { get; set; } = string.Empty;
+    public bool EsAdmin { get; set; }
 }
 
 public class RolWriteDto
@@ -53,6 +54,64 @@ public class RolWriteDto
     [Required]
     [StringLength(50)]
     public string Nombre { get; set; } = string.Empty;
+    public bool EsAdmin { get; set; }
+}
+
+// Auditoria es un log de solo lectura desde afuera: no hay WriteDto de edición
+// porque nunca se actualiza un registro ya escrito (ver AuditoriasEndpoint).
+public class AuditoriaReadDto
+{
+    public int Id { get; set; }
+    public DateTime Fecha { get; set; }
+    public int? UsuarioId { get; set; }
+    public string UsuarioNombre { get; set; } = string.Empty;
+    public string Accion { get; set; } = string.Empty;
+    public string Entidad { get; set; } = string.Empty;
+    public string? EntidadId { get; set; }
+    public string? Detalle { get; set; }
+}
+
+public class AuditoriaCrearDto
+{
+    public int? UsuarioId { get; set; }
+    [Required]
+    [StringLength(150)]
+    public string UsuarioNombre { get; set; } = string.Empty;
+    [Required]
+    [StringLength(20)]
+    public string Accion { get; set; } = string.Empty;
+    [Required]
+    [StringLength(50)]
+    public string Entidad { get; set; } = string.Empty;
+    [StringLength(50)]
+    public string? EntidadId { get; set; }
+    [StringLength(300)]
+    public string? Detalle { get; set; }
+}
+
+public class ConfiguracionReadDto
+{
+    public int Id { get; set; }
+    public string NombreTaller { get; set; } = "Taller Mecánico";
+    public string? LogoUrl { get; set; }
+    public string ColorPrimario { get; set; } = "#0d6efd";
+    public string ColorFondo { get; set; } = "#f8f9fa";
+}
+
+public class ConfiguracionWriteDto
+{
+    public int Id { get; set; }
+    [Required]
+    [StringLength(100)]
+    public string NombreTaller { get; set; } = "Taller Mecánico";
+    [StringLength(300)]
+    public string? LogoUrl { get; set; }
+    [Required]
+    [StringLength(20)]
+    public string ColorPrimario { get; set; } = "#0d6efd";
+    [Required]
+    [StringLength(20)]
+    public string ColorFondo { get; set; } = "#f8f9fa";
 }
 
 public class TipoTurnoReadDto

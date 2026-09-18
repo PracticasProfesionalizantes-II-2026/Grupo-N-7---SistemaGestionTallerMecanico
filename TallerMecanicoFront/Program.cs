@@ -26,11 +26,14 @@ builder.Services.AddControllersWithViews(options =>
         .Build();
     options.Filters.Add(new AuthorizeFilter(politicaGlobal));
     options.Filters.Add<RestringirAccesoMecanicoFilter>();
+    options.Filters.Add<RegistrarAuditoriaFilter>();
 });
 
 builder.Services.AddHttpClient("TallerApi", client =>
 {
-    var baseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5237/";
+    var baseUrl = Environment.GetEnvironmentVariable("TALLER_API_BASE_URL")
+        ?? builder.Configuration["ApiSettings:BaseUrl"]
+        ?? "http://localhost:5237/";
     client.BaseAddress = new Uri(baseUrl);
 });
 
@@ -73,6 +76,5 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Usuarios}/{action=Login}/{id?}")
     .WithStaticAssets();
-
 
 app.Run();

@@ -22,11 +22,18 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING_TALLER")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
+
 builder.Services.AddDbContext<FacturasDBContext>(opt =>
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    opt.UseSqlServer(connectionString));
 
 builder.Services.AddScoped<ICategoriasTrabajosRepositorio, CategoriasTrabajosRepositorio>();
 builder.Services.AddScoped<ICategoriasTrabajosLogica, CategoriasTrabajosLogica>();
+builder.Services.AddScoped<IAuditoriasRepositorio, AuditoriasRepositorio>();
+builder.Services.AddScoped<IAuditoriasLogica, AuditoriasLogica>();
+builder.Services.AddScoped<IConfiguracionRepositorio, ConfiguracionRepositorio>();
+builder.Services.AddScoped<IConfiguracionLogica, ConfiguracionLogica>();
 builder.Services.AddScoped<IClientesRepositorio, ClientesRepositorio>();
 builder.Services.AddScoped<IClientesLogica, ClientesLogica>();
 builder.Services.AddScoped<IDetallesFacturasComprasRepositorio, DetalleFacturasComprasRepositorio>();
@@ -100,6 +107,8 @@ app.Use(async (context, next) =>
 });
 
 app.MapCategoriasTrabajosEndpoints();
+app.MapAuditoriasEndpoints();
+app.MapConfiguracionEndpoints();
 app.MapClientesEndpoints();
 app.MapDetallesFacturasComprasEndpoints();
 app.MapDetallesFacturasVentasEndpoints();

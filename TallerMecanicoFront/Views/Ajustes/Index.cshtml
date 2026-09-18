@@ -1,0 +1,89 @@
+@model TallerMecanicoFront.Models.Configuracion
+@{
+    ViewData["Title"] = "Personalización del Sistema";
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        @if (TempData["Mensaje"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["Mensaje"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-4 gap-2">
+                    <i class="bi bi-palette fs-3 text-primary"></i>
+                    <div>
+                        <h1 class="h4 mb-0">Personalización y Ajustes</h1>
+                        <p class="text-muted small mb-0">Personaliza el logo, nombre y colores de la interfaz del taller.</p>
+                    </div>
+                </div>
+
+                <form asp-action="Index" method="post" enctype="multipart/form-data">
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="LogoUrl" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="NombreTaller" class="form-label font-weight-bold">Nombre del Taller</label>
+                        <input asp-for="NombreTaller" class="form-control" placeholder="Ej: Taller Mecánico San Cayetano" required />
+                        <span asp-validation-for="NombreTaller" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Logo del Taller</label>
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            @if (!string.IsNullOrWhiteSpace(Model.LogoUrl))
+                            {
+                                <img src="@Model.LogoUrl" alt="Logo actual" class="img-thumbnail" style="max-height: 80px; max-width: 150px; object-fit: contain;" />
+                            }
+                            else
+                            {
+                                <div class="bg-light border rounded d-flex align-items-center justify-content-center text-muted" style="width: 80px; height: 80px;">
+                                    <i class="bi bi-image fs-3"></i>
+                                </div>
+                            }
+                            <div class="flex-grow-1">
+                                <input type="file" name="archivoLogo" class="form-control" accept="image/*" />
+                                <div class="form-text">Formatos permitidos: PNG, JPG, JPEG, SVG o WEBP.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="ColorPrimario" class="form-label">Color de Acento / Primario</label>
+                            <div class="input-group">
+                                <input asp-for="ColorPrimario" type="color" class="form-control form-control-color" />
+                                <input asp-for="ColorPrimario" type="text" class="form-control" placeholder="#0d6efd" required />
+                            </div>
+                            <span asp-validation-for="ColorPrimario" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ColorFondo" class="form-label">Color de Fondo General</label>
+                            <div class="input-group">
+                                <input asp-for="ColorFondo" type="color" class="form-control form-control-color" />
+                                <input asp-for="ColorFondo" type="text" class="form-control" placeholder="#f8f9fa" required />
+                            </div>
+                            <span asp-validation-for="ColorFondo" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <button type="submit" class="btn btn-primary px-4">Guardar Ajustes</button>
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary px-4">Volver al Inicio</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+

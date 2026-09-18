@@ -58,9 +58,16 @@ public class RestringirAccesoMecanicoFilter : IAsyncActionFilter
         ("Reportes", "Turnos"),
     };
 
-    public static bool EsAdmin(string? nombreRol) =>
-        !string.IsNullOrWhiteSpace(nombreRol) &&
-        nombreRol.Contains("admin", StringComparison.OrdinalIgnoreCase);
+    // Nombre del claim propio (no estándar) que se emite en el login con el
+    // valor de Rol.EsAdmin. Antes acá se comparaba texto contra el nombre del
+    // rol ("Contains admin"), lo cual se rompía si alguien renombraba el rol
+    // a, por ejemplo, "Dueño" (como lo llama el propio documento del
+    // proyecto). Ahora el permiso viene de un dato estructurado en la base,
+    // no del nombre que le hayan puesto al rol.
+    public const string ClaimEsAdmin = "EsAdmin";
+
+    public static bool EsAdmin(ClaimsPrincipal usuario) =>
+        string.Equals(usuario.FindFirstValue(ClaimEsAdmin), bool.TrueString, StringComparison.OrdinalIgnoreCase);
 
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
@@ -71,10 +78,8 @@ public class RestringirAccesoMecanicoFilter : IAsyncActionFilter
             return;
         }
 
-        var nombreRol = usuario.FindFirstValue(ClaimTypes.Role);
-
         // Admin: sin restricciones.
-        if (EsAdmin(nombreRol))
+        if (EsAdmin(usuario))
         {
             await next();
             return;

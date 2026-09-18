@@ -59,11 +59,14 @@ public class UsuariosController : Controller
             return View(login);
         }
 
-        // Los roles son texto libre (sin código fijo en la base), por eso se resuelve
-        // el nombre del rol acá y se guarda como claim — el resto del sitio (menú,
-        // filtro de acceso) decide por nombre ("Administrador", "Mecánico"), no por Id.
+        // El nombre del rol se guarda como claim solo para mostrarlo en pantalla
+        // (menú, encabezados). El PERMISO en sí ya no depende de ese nombre de
+        // texto libre: viene de Rol.EsAdmin, un dato estructurado que no se
+        // rompe si el rol se renombra (ver RestringirAccesoMecanicoFilter).
         var roles = await _httpClient.GetFromJsonAsync<List<Rol>>("api/roles") ?? new List<Rol>();
-        var nombreRol = roles.FirstOrDefault(r => r.Id == usuario.IdRol)?.Nombre ?? string.Empty;
+        var rolDelUsuario = roles.FirstOrDefault(r => r.Id == usuario.IdRol);
+        var nombreRol = rolDelUsuario?.Nombre ?? string.Empty;
+        var esAdmin = rolDelUsuario?.EsAdmin ?? false;
 
         // La API ya validó las credenciales; acá solo emitimos la identidad
         // de sesión (cookie) para que el resto del sitio sepa quién entró
@@ -73,8 +76,21 @@ public class UsuariosController : Controller
             new(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
             new(ClaimTypes.Name, $"{usuario.Nombre} {usuario.Apellido}".Trim()),
             new(ClaimTypes.Email, usuario.Correo),
-            new(ClaimTypes.Role, nombreRol)
+            new(ClaimTypes.Role, nombreRol),
+            new(RestringirAccesoMecanicoFilter.ClaimEsAdmin, esAdmin.ToString())
         };
+
+        if (esAdmin)
+        {
+            if (!string.Equals(nombreRol, "Dueño", StringComparison.OrdinalIgnoreCase))
+            {
+                claims.Add(new(ClaimTypes.Role, "Dueño"));
+            }
+            if (!string.Equals(nombreRol, "Administrador", StringComparison.OrdinalIgnoreCase))
+            {
+                claims.Add(new(ClaimTypes.Role, "Administrador"));
+            }
+        }
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);
@@ -146,6 +162,7 @@ public class UsuariosController : Controller
         return RedirectToAction(nameof(Login));
     }
 
+    [Authorize(Roles = "Dueño,Administrador")]
     public async Task<IActionResult> Index()
     {
         var response = await _httpClient.GetAsync("api/usuarios");
@@ -159,6 +176,7 @@ public class UsuariosController : Controller
         return View(usuarios);
     }
 
+    [Authorize(Roles = "Dueño,Administrador")]
     public async Task<IActionResult> Create()
     {
         await CargarOpcionesAsync();
@@ -166,6 +184,7 @@ public class UsuariosController : Controller
     }
 
     [HttpPost]
+    [Authorize(Roles = "Dueño,Administrador")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Usuario usuario)
     {
@@ -190,6 +209,7 @@ public class UsuariosController : Controller
 
     // Vista de solo lectura: es la que se ofrece en vez de "Editar" cuando
     // el registro está dado de baja (Activo = false).
+    [Authorize(Roles = "Dueño,Administrador")]
     public async Task<IActionResult> Details(int id)
     {
         var response = await _httpClient.GetAsync($"api/usuarios/{id}");
@@ -207,6 +227,7 @@ public class UsuariosController : Controller
         return View(usuario);
     }
 
+    [Authorize(Roles = "Dueño,Administrador")]
     public async Task<IActionResult> Edit(int id)
     {
         var response = await _httpClient.GetAsync($"api/usuarios/{id}");
@@ -226,6 +247,7 @@ public class UsuariosController : Controller
     }
 
     [HttpPost]
+    [Authorize(Roles = "Dueño,Administrador")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, Usuario usuario)
     {
@@ -253,6 +275,7 @@ public class UsuariosController : Controller
     }
 
     [HttpPost]
+    [Authorize(Roles = "Dueño,Administrador")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {

@@ -1,9 +1,11 @@
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TallerMecanicoFront.Models;
 
 namespace TallerMecanicoFront.Controllers;
 
+[Authorize(Roles = "Dueño,Administrador")]
 public class ProveedoresController : Controller
 {
     private readonly HttpClient _httpClient;

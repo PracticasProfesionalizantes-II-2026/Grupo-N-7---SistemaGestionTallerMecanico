@@ -1,19 +1,57 @@
+@inject IHttpClientFactory HttpClientFactory
+@{
+    TallerMecanicoFront.Models.Configuracion? appConfig = null;
+    try
+    {
+        var client = HttpClientFactory.CreateClient("TallerApi");
+        appConfig = await client.GetFromJsonAsync<TallerMecanicoFront.Models.Configuracion>("api/configuracion");
+    }
+    catch { }
+    var nombreTaller = string.IsNullOrWhiteSpace(appConfig?.NombreTaller) ? "Taller Mecánico" : appConfig.NombreTaller;
+    var logoUrl = appConfig?.LogoUrl;
+    var colorPrimario = string.IsNullOrWhiteSpace(appConfig?.ColorPrimario) ? "#0d6efd" : appConfig.ColorPrimario;
+    var colorFondo = string.IsNullOrWhiteSpace(appConfig?.ColorFondo) ? "#f8f9fa" : appConfig.ColorFondo;
+}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - TallerMecanicoFront</title>
+    <title>@ViewData["Title"] - @nombreTaller</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/sidebar.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/TallerMecanicoFront.styles.css" asp-append-version="true" />
+    <style>
+        :root {
+            --bs-primary: @colorPrimario;
+            --color-fondo-app: @colorFondo;
+        }
+        body {
+            background-color: var(--color-fondo-app) !important;
+        }
+        .btn-primary, .bg-primary {
+            background-color: @colorPrimario !important;
+            border-color: @colorPrimario !important;
+        }
+        .text-primary {
+            color: @colorPrimario !important;
+        }
+    </style>
 </head>
 <body>
     <div class="d-flex">
         <nav class="sidebar d-flex flex-column" id="sidebar">
+            <div class="p-3 text-center border-bottom border-secondary border-opacity-25">
+                @if (!string.IsNullOrWhiteSpace(logoUrl))
+                {
+                    <img src="@logoUrl" alt="@nombreTaller" class="img-fluid mb-2" style="max-height: 48px; max-width: 160px; object-fit: contain;" />
+                }
+                <div class="fw-bold text-white small">@nombreTaller</div>
+            </div>
+
             <div class="perfil">
                 <div class="avatar"><i class="bi bi-person-fill"></i></div>
                 <div class="nombre">@(User.Identity?.Name ?? "Invitado")</div>
@@ -22,8 +60,7 @@
 
             <div class="flex-grow-1 py-2">
                 @{
-                    var nombreRol = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-                    var esAdmin = TallerMecanicoFront.Infrastructure.RestringirAccesoMecanicoFilter.EsAdmin(nombreRol);
+                    var esAdmin = TallerMecanicoFront.Infrastructure.RestringirAccesoMecanicoFilter.EsAdmin(User);
                 }
                 @if (!esAdmin)
                 {
@@ -55,10 +92,11 @@
                     <div class="collapse" id="menuUsuarios">
                         <a class="nav-link" asp-controller="Usuarios" asp-action="Index">Usuarios</a>
                         <a class="nav-link" asp-controller="Roles" asp-action="Index">Roles</a>
+                        <a class="nav-link" asp-controller="Auditorias" asp-action="Index">Auditoría</a>
                         <a class="nav-link" asp-controller="Localidades" asp-action="Index">Localidades</a>
                         <a class="nav-link" asp-controller="SesionesCaja" asp-action="Index">Sesiones de Caja</a>
                         <a class="nav-link" asp-controller="Clientes" asp-action="Index">Clientes</a>
-                        <a class="nav-link" asp-controller="proveedores" asp-action="Index">Proveedores</a>
+                        <a class="nav-link" asp-controller="Proveedores" asp-action="Index">Proveedores</a>
                     </div>
 
                     <a class="nav-link dropdown-toggle" data-bs-toggle="collapse" href="#menuTrabajos" role="button" aria-expanded="false">
@@ -93,6 +131,10 @@
                         <i class="bi bi-graph-up"></i> Reportes
                     </a>
 
+                    <a class="nav-link" asp-controller="Ajustes" asp-action="Index">
+                        <i class="bi bi-gear-fill"></i> Personalización
+                    </a>
+
                     <a class="nav-link" asp-controller="Home" asp-action="Privacy">
                         <i class="bi bi-shield-lock"></i> Privacy
                     </a>
@@ -114,20 +156,11 @@
                 var esHomeIndex = string.Equals(ViewContext.RouteData.Values["controller"]?.ToString(), "Home", StringComparison.OrdinalIgnoreCase)
                     && string.Equals(ViewContext.RouteData.Values["action"]?.ToString(), "Index", StringComparison.OrdinalIgnoreCase);
             }
-            <!-- <div class="main-topbar d-flex justify-content-between align-items-center">
-                <button class="btn btn-sm btn-outline-secondary d-md-none" id="botonToggleSidebar" type="button">
-                    <i class="bi bi-list"></i>
-                </button>
-                <span>@ViewData["Title"]</span>
-            </div> -->
             <div class="container-fluid px-4 pb-4">
                 <main role="main" class="@(esHomeIndex ? "" : "content-card")">
                     @RenderBody()
                 </main>
             </div>
-            <!-- <footer class="text-muted px-4 pb-3">
-                &copy; 2026 - TallerMecanicoFront - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
-            </footer> -->
         </div>
     </div>
 
