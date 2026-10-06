@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ClasesTallerMecanico.Models
 {
-    public class FacturaVenta
+    public class FacturaVenta : IValidatableObject
     {
         [Key]
         public int Id { get; set; }
@@ -41,6 +41,14 @@ namespace ClasesTallerMecanico.Models
 
 
         public ICollection<DetalleFacturaVenta> DetallesFacturaVenta { get; set; } // Relación 1 a muchos con DetalleFacturaVenta
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (FechaEmision.Date > DateTime.Today)
+                yield return new ValidationResult("La fecha de emisión no puede ser futura.", new[] { nameof(FechaEmision) });
+            if (FechaPagoFactura.HasValue && FechaPagoFactura.Value < FechaEmision)
+                yield return new ValidationResult("La fecha de pago no puede ser anterior a la fecha de emisión.", new[] { nameof(FechaPagoFactura) });
+        }
     }
 
 }

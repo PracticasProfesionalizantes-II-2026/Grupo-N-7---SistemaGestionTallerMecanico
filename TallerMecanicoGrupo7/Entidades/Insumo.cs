@@ -30,12 +30,12 @@ namespace ClasesTallerMecanico.Models
 
         [Required(ErrorMessage = "El precio de compra es requerido")]
         [Column(TypeName = "decimal(18, 2)")]
-        [Range(0, (double)decimal.MaxValue)]
+        [Range(typeof(decimal), "0.01", "79228162514264337593543950335")]
         public decimal PrecioCompra { get; set; }
 
         [Required(ErrorMessage = "El precio de venta es requerida")]
         [Column(TypeName = "decimal(18, 2)")]
-        [Range(0, (double)decimal.MaxValue)]
+        [Range(typeof(decimal), "0.01", "79228162514264337593543950335")]
         public decimal PrecioVenta { get; set; }
 
         public bool Activo { get; set; } = true;

@@ -177,9 +177,11 @@ public class PersonaWriteDto
     public string TipoPersona { get; set; } = string.Empty;
     [Required]
     [StringLength(100)]
+    [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$", ErrorMessage = "El nombre solo puede contener letras y espacios.")]
     public string Nombre { get; set; } = string.Empty;
     [Required]
     [StringLength(100)]
+    [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$", ErrorMessage = "El apellido solo puede contener letras y espacios.")]
     public string Apellido { get; set; } = string.Empty;
     [Required]
     [StringLength(200)]
@@ -187,6 +189,7 @@ public class PersonaWriteDto
     [Required]
     [Range(1, int.MaxValue)]
     public int IdLocalidad { get; set; }
+    [RegularExpression(@"^[0-9+\s()-]{6,20}$", ErrorMessage = "El formato de teléfono no es válido.")]
     [StringLength(20)]
     public string? Telefono { get; set; }
     [Required]
@@ -194,8 +197,10 @@ public class PersonaWriteDto
     [StringLength(100)]
     public string Correo { get; set; } = string.Empty;
     public bool Activo { get; set; } = true;
+    [RegularExpression(@"^(\d{11}|\d{2}-\d{8}-\d{1})$", ErrorMessage = "El CUIL/CUIT debe tener 11 números (ej: 20345556660 o 20-35666666-0).")]
     public string? CuilCuit { get; set; }
     public string? CondFiscal { get; set; }
+    [RegularExpression(@"^\d{6,10}$", ErrorMessage = "El DNI debe contener solo números (entre 6 y 10 dígitos).")]
     public string? Dni { get; set; }
     public DateTime? FechaNacimiento { get; set; }
     public int? IdRol { get; set; }
@@ -211,6 +216,7 @@ public class ClienteReadDto : PersonaReadDto
 public class ClienteWriteDto : PersonaWriteDto
 {
     [Required]
+    [RegularExpression(@"^(\d{11}|\d{2}-\d{8}-\d{1})$", ErrorMessage = "El CUIL/CUIT debe tener 11 números (ej: 20345556660 o 20-35666666-0).")]
     [StringLength(15, MinimumLength = 11)]
     public new string CuilCuit { get; set; } = string.Empty;
     [Required]
@@ -227,6 +233,7 @@ public class ProveedorReadDto : PersonaReadDto
 public class ProveedorWriteDto : PersonaWriteDto
 {
     [Required]
+    [RegularExpression(@"^(\d{11}|\d{2}-\d{8}-\d{1})$", ErrorMessage = "El CUIL/CUIT debe tener 11 números (ej: 20345556660 o 20-35666666-0).")]
     [StringLength(15, MinimumLength = 11)]
     public new string CuilCuit { get; set; } = string.Empty;
     [Required]
@@ -242,9 +249,10 @@ public class UsuarioReadDto : PersonaReadDto
     public string ContraseñaHash { get; set; } = string.Empty;
 }
 
-public class UsuarioWriteDto : PersonaWriteDto
+public class UsuarioWriteDto : PersonaWriteDto, IValidatableObject
 {
     [Required]
+    [RegularExpression(@"^\d{6,10}$", ErrorMessage = "El DNI debe contener solo números (entre 6 y 10 dígitos).")]
     [StringLength(15)]
     public new string Dni { get; set; } = string.Empty;
     public new DateTime? FechaNacimiento { get; set; }
@@ -254,6 +262,21 @@ public class UsuarioWriteDto : PersonaWriteDto
     [Required]
     [StringLength(255, MinimumLength = 5)]
     public new string ContraseñaHash { get; set; } = string.Empty;
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (FechaNacimiento.HasValue)
+        {
+            if (FechaNacimiento.Value.Date > DateTime.Today)
+            {
+                yield return new ValidationResult("La fecha de nacimiento no puede ser futura.", new[] { nameof(FechaNacimiento) });
+            }
+            else if (FechaNacimiento.Value.Date > DateTime.Today.AddYears(-18))
+            {
+                yield return new ValidationResult("El usuario debe tener al menos 18 años.", new[] { nameof(FechaNacimiento) });
+            }
+        }
+    }
 }
 
 public class UsuarioLoginDto
@@ -291,6 +314,7 @@ public class MaquinaWriteDto
     public string Motor { get; set; } = string.Empty;
     [Required]
     [StringLength(10, MinimumLength = 6)]
+    [RegularExpression(@"^[a-zA-Z]{3}\s?[0-9]{3}$|^[a-zA-Z]{2}\s?[0-9]{3}\s?[a-zA-Z]{2}$", ErrorMessage = "La patente debe tener un formato válido (ej: ABC 123 o AB 123 CD).")]
     public string Patente { get; set; } = string.Empty;
     [Required]
     [Range(1, int.MaxValue)]
@@ -311,7 +335,7 @@ public class InsumoReadDto
     public bool Activo { get; set; }
 }
 
-public class InsumoWriteDto
+public class InsumoWriteDto : IValidatableObject
 {
     public int Id { get; set; }
     [Required]
@@ -329,12 +353,28 @@ public class InsumoWriteDto
     [Range(0, int.MaxValue)]
     public int Stock { get; set; }
     [Required]
-    [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+    [Range(typeof(decimal), "0.01", "79228162514264337593543950335")]
     public decimal PrecioCompra { get; set; }
     [Required]
-    [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+    [Range(typeof(decimal), "0.01", "79228162514264337593543950335")]
     public decimal PrecioVenta { get; set; }
     public bool Activo { get; set; } = true;
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (PrecioCompra <= 0.01m)
+        {
+            yield return new ValidationResult("El precio de compra debe ser mayor a 0,01.", new[] { nameof(PrecioCompra) });
+        }
+        if (PrecioVenta <= 0.01m)
+        {
+            yield return new ValidationResult("El precio de venta debe ser mayor a 0,01.", new[] { nameof(PrecioVenta) });
+        }
+        if (PrecioVenta < PrecioCompra)
+        {
+            yield return new ValidationResult("El precio de venta no puede ser menor al precio de compra.", new[] { nameof(PrecioVenta) });
+        }
+    }
 }
 
 public class InsumoPorTrabajoReadDto
@@ -415,7 +455,7 @@ public class TrabajoPorTurnoWriteDto
     [Range(1, int.MaxValue)]
     public int IdUsuario { get; set; }
     [Required]
-    [Range(typeof(decimal), "0.01", "79228162514264337593543950335")]
+    [Range(typeof(decimal), "0", "79228162514264337593543950335")]
     public decimal HsHombre { get; set; }
     [Required]
     [Range(typeof(decimal), "0", "79228162514264337593543950335")]
@@ -454,7 +494,7 @@ public class TurnoReadDto
     public string? Descripcion { get; set; }
 }
 
-public class TurnoWriteDto
+public class TurnoWriteDto : IValidatableObject
 {
     public int Id { get; set; }
     [Required]
@@ -469,6 +509,14 @@ public class TurnoWriteDto
     public int? IdEstado { get; set; }
     [StringLength(500)]
     public string? Descripcion { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (Id == 0 && Fecha < DateTime.Now)
+        {
+            yield return new ValidationResult("No se puede agendar un turno para una fecha pasada.", new[] { nameof(Fecha) });
+        }
+    }
 }
 
 public class TurnoGestionReadDto
@@ -512,7 +560,7 @@ public class FacturaCompraReadDto
     public int IdFormaPago { get; set; }
 }
 
-public class FacturaCompraWriteDto
+public class FacturaCompraWriteDto : IValidatableObject
 {
     public int Id { get; set; }
     [Required]
@@ -531,6 +579,18 @@ public class FacturaCompraWriteDto
     [Required]
     [Range(1, int.MaxValue)]
     public int IdFormaPago { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (FechaFactura.Date > DateTime.Today)
+        {
+            yield return new ValidationResult("La fecha de factura no puede ser una fecha futura.", new[] { nameof(FechaFactura) });
+        }
+        if (FechaPagoFactura.HasValue && FechaPagoFactura.Value.Date < FechaFactura.Date)
+        {
+            yield return new ValidationResult("La fecha de pago no puede ser anterior a la fecha de la factura.", new[] { nameof(FechaPagoFactura) });
+        }
+    }
 }
 
 public class DetalleFacturaCompraReadDto
@@ -579,7 +639,7 @@ public class FacturaVentaReadDto
     public int IdFormaPago { get; set; }
 }
 
-public class FacturaVentaWriteDto
+public class FacturaVentaWriteDto : IValidatableObject
 {
     public int Id { get; set; }
     [Required]
@@ -601,6 +661,18 @@ public class FacturaVentaWriteDto
     [Required]
     [Range(1, int.MaxValue)]
     public int IdFormaPago { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (FechaEmision.Date > DateTime.Today)
+        {
+            yield return new ValidationResult("La fecha de emisión no puede ser una fecha futura.", new[] { nameof(FechaEmision) });
+        }
+        if (FechaPagoFactura.HasValue && FechaPagoFactura.Value.Date < FechaEmision.Date)
+        {
+            yield return new ValidationResult("La fecha de pago no puede ser anterior a la fecha de emisión.", new[] { nameof(FechaPagoFactura) });
+        }
+    }
 }
 
 public class DetalleFacturaVentaReadDto

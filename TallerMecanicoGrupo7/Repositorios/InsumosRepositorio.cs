@@ -25,6 +25,7 @@ public class InsumosRepositorio : IInsumosRepositorio
 
     public async Task AddInsumoAsync(Insumo insumo)
     {
+        ValidarPrecios(insumo);
         _context.Insumos.Add(insumo);
         await _context.SaveChangesAsync();
     }
@@ -37,9 +38,22 @@ public class InsumosRepositorio : IInsumosRepositorio
             throw new InvalidOperationException("No se puede editar un insumo dado de baja.");
         }
 
+        ValidarPrecios(insumo);
         var versionador = new InsumoVersionador(_context);
         await versionador.ActualizarDesdeEdicionAsync(insumo);
         await _context.SaveChangesAsync();
+    }
+
+    private static void ValidarPrecios(Insumo insumo)
+    {
+        if (insumo.PrecioCompra <= 0.01m || insumo.PrecioVenta <= 0.01m)
+        {
+            throw new InvalidOperationException("Los precios de compra y venta deben ser mayores a 0,01.");
+        }
+        if (insumo.PrecioVenta < insumo.PrecioCompra)
+        {
+            throw new InvalidOperationException("El precio de venta no puede ser menor al precio de compra.");
+        }
     }
 
     public async Task DeleteInsumoAsync(int id)
