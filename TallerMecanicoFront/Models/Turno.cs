@@ -20,7 +20,7 @@ public class Turno : IValidatableObject
 
     [Required(ErrorMessage = "La fecha es requerida.")]
     [Display(Name = "Fecha")]
-    public DateTime Fecha { get; set; } = DateTime.Today;
+    public DateTime Fecha { get; set; } = DateTime.Now.AddMinutes(5);
 
     [Display(Name = "Estado")]
     [Range(1, int.MaxValue, ErrorMessage = "Selecciona un estado.")]
@@ -37,6 +37,9 @@ public class Turno : IValidatableObject
         {
             results.Add(new ValidationResult("La fecha del turno es requerida.", new[] { nameof(Fecha) }));
         }
+
+        if (Fecha != default && Fecha < DateTime.Now)
+            results.Add(new ValidationResult("No se puede agendar un turno en el pasado.", new[] { nameof(Fecha) }));
 
         if (IdTipoTurno is null)
         {

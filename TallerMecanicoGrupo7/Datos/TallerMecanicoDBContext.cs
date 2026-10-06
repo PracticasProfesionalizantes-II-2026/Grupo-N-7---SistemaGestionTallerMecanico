@@ -39,6 +39,20 @@ namespace ClasesTallerMecanico.Datos
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<Maquina>()
+                .HasIndex(m => m.Patente)
+                .IsUnique()
+                .HasFilter("[Activo] = 1");
+            modelBuilder.Entity<Cliente>()
+                .HasIndex(c => c.CuilCuit)
+                .IsUnique();
+            modelBuilder.Entity<Proveedor>()
+                .HasIndex(p => p.CuilCuit)
+                .IsUnique();
+            modelBuilder.Entity<Usuario>()
+                .HasIndex(u => u.Dni)
+                .IsUnique();
+
             // ---- Relaciones que quedaban en Cascade por convención de EF Core ----
             // (toda FK requerida sin OnDelete explícito cae en Cascade por defecto).
             // Se fuerzan a Restrict porque son tablas de "catálogo" o "cabecera":

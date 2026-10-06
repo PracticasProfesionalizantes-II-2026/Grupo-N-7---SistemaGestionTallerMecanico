@@ -11,10 +11,12 @@ namespace ClasesTallerMecanico.Models
 
         [Required(ErrorMessage = "El nombre es requerido.")]
         [MaxLength(100)]
+        [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$", ErrorMessage = "El nombre solo puede contener letras y espacios.")]
         public string Nombre { get; set; }
 
         [Required(ErrorMessage = "El apellido es requerido.")]
         [MaxLength(100)]
+        [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$", ErrorMessage = "El apellido solo puede contener letras y espacios.")]
         public string Apellido { get; set; }
 
         [Required(ErrorMessage = "El domicilio es requerido.")]

@@ -168,3 +168,6 @@ body {
     top: 0;
     z-index: 1;
 }
+.patente-input {
+    text-transform: uppercase;
+}

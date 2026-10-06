@@ -8,10 +8,23 @@ namespace ClasesTallerMecanico.Models
     {
 
         [Required(ErrorMessage = "El dni es requerido.")]
-        [MaxLength(15)]
+        [RegularExpression(@"^\d{6,10}$", ErrorMessage = "El DNI debe contener solo números (entre 6 y 10 dígitos).")]
+        [MaxLength(10)]
         public string Dni { get; set; }
 
+        [CustomValidation(typeof(Usuario), nameof(ValidarFechaNacimiento))]
         public DateTime? FechaNacimiento { get; set; }
+
+        public static ValidationResult? ValidarFechaNacimiento(DateTime? fechaNacimiento, ValidationContext _)
+        {
+            if (!fechaNacimiento.HasValue)
+                return ValidationResult.Success;
+            if (fechaNacimiento.Value.Date > DateTime.Today)
+                return new ValidationResult("La fecha de nacimiento no puede ser futura.");
+            if (fechaNacimiento.Value.Date > DateTime.Today.AddYears(-18))
+                return new ValidationResult("El usuario debe tener al menos 18 años.");
+            return ValidationResult.Success;
+        }
 
         [Required]
         [ForeignKey("Rol")]

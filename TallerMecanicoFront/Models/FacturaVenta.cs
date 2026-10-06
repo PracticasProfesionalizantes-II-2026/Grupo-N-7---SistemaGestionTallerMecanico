@@ -42,6 +42,11 @@ public class FacturaVenta : IValidatableObject
             results.Add(new ValidationResult("La fecha de emisión es requerida.", new[] { nameof(FechaEmision) }));
         }
 
+        if (FechaEmision.Date > DateTime.Today)
+            results.Add(new ValidationResult("La fecha de emisión no puede ser futura.", new[] { nameof(FechaEmision) }));
+        if (FechaPagoFactura.HasValue && FechaPagoFactura.Value < FechaEmision)
+            results.Add(new ValidationResult("La fecha de pago no puede ser anterior a la fecha de emisión.", new[] { nameof(FechaPagoFactura) }));
+
         if (TotalFactura < 0)
         {
             results.Add(new ValidationResult("El total no puede ser negativo.", new[] { nameof(TotalFactura) }));

@@ -55,7 +55,7 @@
                         </div>
                         <div class="col-md-6">
                             <label asp-for="Telefono" class="form-label"></label>
-                            <input asp-for="Telefono" class="form-control" maxlength="20" />
+                            <input asp-for="Telefono" class="form-control" maxlength="20" inputmode="tel" />
                         </div>
                         <div class="col-md-6">
                             <label asp-for="Correo" class="form-label"></label>
@@ -64,7 +64,7 @@
                         </div>
                         <div class="col-md-6 campos-cuil">
                             <label asp-for="CuilCuit" class="form-label">CUIL/CUIT</label>
-                            <input asp-for="CuilCuit" class="form-control" maxlength="15" />
+                            <input asp-for="CuilCuit" class="form-control" maxlength="15" inputmode="numeric" title="Ingrese 11 números o formato XX-XXXXXXXX-X" />
                             <span asp-validation-for="CuilCuit" class="text-danger"></span>
                         </div>
                         <div class="col-md-6 campos-cuil">
@@ -74,7 +74,7 @@
                         </div>
                         <div class="col-md-6 campos-usuario">
                             <label asp-for="Dni" class="form-label">DNI</label>
-                            <input asp-for="Dni" class="form-control" maxlength="15" />
+                            <input asp-for="Dni" class="form-control" maxlength="10" inputmode="numeric" pattern="[0-9]*" title="Ingrese solo números" />
                             <span asp-validation-for="Dni" class="text-danger"></span>
                         </div>
                         <div class="col-md-6 campos-usuario">

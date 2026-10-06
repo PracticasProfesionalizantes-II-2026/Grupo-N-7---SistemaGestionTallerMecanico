@@ -8,10 +8,12 @@ public class Usuario
 
     [Required(ErrorMessage = "El nombre es requerido.")]
     [MaxLength(100)]
+    [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$", ErrorMessage = "El nombre solo puede contener letras y espacios.")]
     public string Nombre { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El apellido es requerido.")]
     [MaxLength(100)]
+    [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$", ErrorMessage = "El apellido solo puede contener letras y espacios.")]
     public string Apellido { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El domicilio es requerido.")]
@@ -22,6 +24,7 @@ public class Usuario
     [Range(1, int.MaxValue, ErrorMessage = "Selecciona una localidad.")]
     public int IdLocalidad { get; set; }
 
+    [RegularExpression(@"^[0-9+\s()-]{6,20}$", ErrorMessage = "El formato de teléfono no es válido.")]
     [MaxLength(20)]
     public string? Telefono { get; set; }
 
@@ -33,9 +36,11 @@ public class Usuario
     public bool Activo { get; set; } = true;
 
     [Required(ErrorMessage = "El DNI es requerido.")]
+    [RegularExpression(@"^\d{6,10}$", ErrorMessage = "El DNI debe contener solo números (entre 6 y 10 dígitos).")]
     [MaxLength(15)]
     public string Dni { get; set; } = string.Empty;
 
+    [CustomValidation(typeof(Usuario), nameof(ValidarFechaNacimiento))]
     public DateTime? FechaNacimiento { get; set; }
 
     [Required(ErrorMessage = "El rol es requerido.")]
@@ -48,4 +53,15 @@ public class Usuario
     [StringLength(255, MinimumLength = 5, ErrorMessage = "La contraseña debe tener entre 5 y 255 caracteres.")]
     [DataType(DataType.Password)]
     public string ContraseñaHash { get; set; } = string.Empty;
+
+    public static ValidationResult? ValidarFechaNacimiento(DateTime? fecha, ValidationContext _)
+    {
+        if (!fecha.HasValue)
+            return ValidationResult.Success;
+        if (fecha.Value.Date > DateTime.Today)
+            return new ValidationResult("La fecha de nacimiento no puede ser futura.");
+        if (fecha.Value.Date > DateTime.Today.AddYears(-18))
+            return new ValidationResult("El usuario debe tener al menos 18 años.");
+        return ValidationResult.Success;
+    }
 }

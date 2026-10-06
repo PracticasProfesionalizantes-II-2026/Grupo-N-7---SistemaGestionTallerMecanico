@@ -18,8 +18,6 @@
                         <input type="hidden" name="facturaId" value="@facturaCompraId.Value" />
                     }
                     <input asp-for="Stock" type="hidden" />
-                    <input asp-for="PrecioCompra" type="hidden" value="0" />
-                    <input asp-for="PrecioVenta" type="hidden" value="0" />
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                     <div class="row g-3">
@@ -55,6 +53,16 @@
                         <div class="col-md-3 d-flex align-items-end">
                             <div class="form-check mt-4">
                                 <input type="hidden" asp-for="Activo" value="true" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="PrecioCompra" class="form-label">Precio compra</label>
+                                <input asp-for="PrecioCompra" type="number" step="0.01" min="0.01" class="form-control" required />
+                                <span asp-validation-for="PrecioCompra" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="PrecioVenta" class="form-label">Precio venta</label>
+                                <input asp-for="PrecioVenta" type="number" step="0.01" min="0.01" class="form-control" required />
+                                <span asp-validation-for="PrecioVenta" class="text-danger"></span>
                             </div>
                         </div>
                     </div>

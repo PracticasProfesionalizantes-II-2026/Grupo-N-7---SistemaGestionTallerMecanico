@@ -25,7 +25,13 @@ public class TurnosRepositorio : ITurnosRepositorio
 
     public async Task AddTurnoAsync(Turno turno)
     {
+        if (turno.Fecha < DateTime.Now)
+        {
+            throw new InvalidOperationException("No se puede agendar un turno para una fecha pasada.");
+        }
+
         await ValidarMaquinaDeClienteAsync(turno);
+        await ValidarSuperposicionTurnoAsync(turno);
         _context.Turnos.Add(turno);
         await _context.SaveChangesAsync();
     }
@@ -33,9 +39,32 @@ public class TurnosRepositorio : ITurnosRepositorio
     public async Task UpdateTurnoAsync(Turno turno)
     {
         await ValidarMaquinaDeClienteAsync(turno);
+        await ValidarSuperposicionTurnoAsync(turno);
         _context.DetachTrackedEntity(turno);
         _context.Turnos.Update(turno);
         await _context.SaveChangesAsync();
+    }
+
+    private async Task ValidarSuperposicionTurnoAsync(Turno turno)
+    {
+        var turnosMismaFecha = await _context.Turnos
+            .Include(t => t.EstadoTurno)
+            .Where(t => t.Id != turno.Id
+                && t.IdMaquina == turno.IdMaquina
+                && t.Fecha == turno.Fecha)
+            .ToListAsync();
+
+        var tieneConflicto = turnosMismaFecha.Any(t =>
+            t.EstadoTurno == null ||
+            (!t.EstadoTurno.Nombre.ToLower().Contains("cancel") &&
+             !t.EstadoTurno.Nombre.ToLower().Contains("anul") &&
+             !t.EstadoTurno.Nombre.ToLower().Contains("finaliz") &&
+             !t.EstadoTurno.Nombre.ToLower().Contains("cerr")));
+
+        if (tieneConflicto)
+        {
+            throw new InvalidOperationException($"La máquina seleccionada ya tiene un turno activo asignado para el {turno.Fecha:dd/MM/yyyy HH:mm}.");
+        }
     }
 
     /// <summary>

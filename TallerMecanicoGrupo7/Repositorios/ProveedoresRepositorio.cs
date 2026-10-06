@@ -25,6 +25,7 @@ public class ProveedoresRepositorio : IProveedoresRepositorio
 
     public async Task AddProveedorAsync(Proveedor proveedor)
     {
+        await ValidarCuilCuitAsync(proveedor);
         _context.Proveedores.Add(proveedor);
         await _context.SaveChangesAsync();
     }
@@ -37,9 +38,19 @@ public class ProveedoresRepositorio : IProveedoresRepositorio
             throw new InvalidOperationException("No se puede editar un proveedor dado de baja.");
         }
 
+        await ValidarCuilCuitAsync(proveedor);
         _context.DetachTrackedEntity(proveedor);
         _context.Proveedores.Update(proveedor);
         await _context.SaveChangesAsync();
+    }
+
+    private async Task ValidarCuilCuitAsync(Proveedor proveedor)
+    {
+        proveedor.CuilCuit = proveedor.CuilCuit?.Trim() ?? string.Empty;
+        var duplicado = await _context.Proveedores.AnyAsync(x => x.Id != proveedor.Id && x.Activo && x.CuilCuit == proveedor.CuilCuit)
+            || await _context.Clientes.AnyAsync(x => x.Id != proveedor.Id && x.Activo && x.CuilCuit == proveedor.CuilCuit);
+        if (duplicado)
+            throw new InvalidOperationException($"Ya existe una persona activa registrada con el CUIL/CUIT {proveedor.CuilCuit}.");
     }
 
     public async Task DeleteProveedorAsync(int id)

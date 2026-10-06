@@ -21,7 +21,8 @@ namespace ClasesTallerMecanico.Models
         public string Motor { get; set; }
 
         [Required(ErrorMessage = "La patente es requerida.")]
-        [StringLength(10, MinimumLength = 6, ErrorMessage = "La longitud debe ser como minimo de 6 y máximo 10 caracteres")]
+        [RegularExpression(@"^[A-Za-z]{3}\s?[0-9]{3}$|^[A-Za-z]{2}\s?[0-9]{3}\s?[A-Za-z]{2}$",
+            ErrorMessage = "La patente debe tener formato ABC 123 o AB 123 CD.")]
         public string Patente { get; set; }
 
         [Required]

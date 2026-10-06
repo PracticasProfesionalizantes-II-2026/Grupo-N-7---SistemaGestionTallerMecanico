@@ -25,6 +25,14 @@ public class MaquinasRepositorio : IMaquinasRepositorio
 
     public async Task AddMaquinaAsync(Maquina maquina)
     {
+        maquina.Patente = maquina.Patente?.Trim().ToUpperInvariant() ?? string.Empty;
+        var patenteSinEspacios = maquina.Patente.Replace(" ", "");
+        var existe = await _context.Maquinas.AnyAsync(x => x.Activo && x.Patente.ToUpper().Replace(" ", "") == patenteSinEspacios);
+        if (existe)
+        {
+            throw new InvalidOperationException($"Ya existe un vehículo registrado con la patente '{maquina.Patente}'.");
+        }
+
         _context.Maquinas.Add(maquina);
         await _context.SaveChangesAsync();
     }
@@ -35,6 +43,14 @@ public class MaquinasRepositorio : IMaquinasRepositorio
         if (existente is not null && !existente.Activo)
         {
             throw new InvalidOperationException("No se puede editar una máquina dada de baja.");
+        }
+
+        maquina.Patente = maquina.Patente?.Trim().ToUpperInvariant() ?? string.Empty;
+        var patenteSinEspacios = maquina.Patente.Replace(" ", "");
+        var duplicado = await _context.Maquinas.AnyAsync(x => x.Id != maquina.Id && x.Activo && x.Patente.ToUpper().Replace(" ", "") == patenteSinEspacios);
+        if (duplicado)
+        {
+            throw new InvalidOperationException($"Ya existe otro vehículo registrado con la patente '{maquina.Patente}'.");
         }
 
         _context.DetachTrackedEntity(maquina);

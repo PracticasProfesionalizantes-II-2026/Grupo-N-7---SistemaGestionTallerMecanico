@@ -25,6 +25,7 @@ public class ClientesRepositorio : IClientesRepositorio
 
     public async Task AddClienteAsync(Cliente cliente)
     {
+        await ValidarCuilCuitAsync(cliente);
         _context.Clientes.Add(cliente);
         await _context.SaveChangesAsync();
     }
@@ -37,9 +38,19 @@ public class ClientesRepositorio : IClientesRepositorio
             throw new InvalidOperationException("No se puede editar un cliente dado de baja.");
         }
 
+        await ValidarCuilCuitAsync(cliente);
         _context.DetachTrackedEntity(cliente);
         _context.Clientes.Update(cliente);
         await _context.SaveChangesAsync();
+    }
+
+    private async Task ValidarCuilCuitAsync(Cliente cliente)
+    {
+        cliente.CuilCuit = cliente.CuilCuit?.Trim() ?? string.Empty;
+        var duplicado = await _context.Clientes.AnyAsync(x => x.Id != cliente.Id && x.Activo && x.CuilCuit == cliente.CuilCuit)
+            || await _context.Proveedores.AnyAsync(x => x.Id != cliente.Id && x.Activo && x.CuilCuit == cliente.CuilCuit);
+        if (duplicado)
+            throw new InvalidOperationException($"Ya existe una persona activa registrada con el CUIL/CUIT {cliente.CuilCuit}.");
     }
 
     public async Task DeleteClienteAsync(int id)

@@ -7,6 +7,7 @@ namespace ClasesTallerMecanico.Models
     public class Cliente : Persona
     {
         [Required(ErrorMessage = "El CuilCuit es requerido.")]
+        [RegularExpression(@"^(\d{11}|\d{2}-\d{8}-\d{1})$", ErrorMessage = "El CUIL/CUIT debe tener 11 números.")]
         [StringLength(15, MinimumLength = 11, ErrorMessage = "Debe tener entre 11 y 15 caracteres")]
         public string CuilCuit { get; set; }
 

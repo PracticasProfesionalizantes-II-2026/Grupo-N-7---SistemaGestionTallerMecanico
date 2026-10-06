@@ -56,6 +56,7 @@ public class FacturasVentasRepositorio : IFacturasVentasRepositorio
 
     public async Task AddFacturaVentaAsync(FacturaVenta facturaVenta)
     {
+        ValidarFechas(facturaVenta);
         await ValidarReferenciasActivasAsync(facturaVenta);
 
         var yaFacturado = await _context.FacturasVentas.AnyAsync(x => x.IdTurno == facturaVenta.IdTurno);
@@ -85,6 +86,18 @@ public class FacturasVentasRepositorio : IFacturasVentasRepositorio
         await _context.SaveChangesAsync();
     }
 
+    private static void ValidarFechas(FacturaVenta facturaVenta)
+    {
+        if (facturaVenta.FechaEmision.Date > DateTime.Today)
+        {
+            throw new InvalidOperationException("La fecha de emisión no puede ser una fecha futura.");
+        }
+        if (facturaVenta.FechaPagoFactura.HasValue && facturaVenta.FechaPagoFactura.Value.Date < facturaVenta.FechaEmision.Date)
+        {
+            throw new InvalidOperationException("La fecha de pago no puede ser anterior a la fecha de emisión.");
+        }
+    }
+
     private async Task ValidarReferenciasActivasAsync(FacturaVenta facturaVenta)
     {
         var clienteActivo = await _context.Clientes
@@ -104,6 +117,7 @@ public class FacturasVentasRepositorio : IFacturasVentasRepositorio
 
     public async Task UpdateFacturaVentaAsync(FacturaVenta facturaVenta)
     {
+        ValidarFechas(facturaVenta);
         var yaFacturado = await _context.FacturasVentas
             .AnyAsync(x => x.IdTurno == facturaVenta.IdTurno && x.Id != facturaVenta.Id);
         if (yaFacturado)
