@@ -56,6 +56,9 @@ public class RestringirAccesoMecanicoFilter : IAsyncActionFilter
         ("InsumosPorTrabajo", "GuardarAjax"),
         ("InsumosPorTrabajo", "EliminarAjax"),
         ("Reportes", "Turnos"),
+        // Chequeo de turnos/facturas abiertas antes de dar de baja un cliente o
+        // una máquina (solo lectura: devuelve cantidades).
+        ("Bajas", "Verificar"),
     };
 
     // Nombre del claim propio (no estándar) que se emite en el login con el

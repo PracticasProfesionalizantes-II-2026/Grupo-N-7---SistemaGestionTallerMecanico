@@ -6,10 +6,12 @@ namespace ClasesTallerMecanico.Logica;
 public class LocalidadesLogica : ILocalidadesLogica
 {
     private readonly ILocalidadesRepositorio _localidadesRepositorio;
+    private readonly IBajaLogica _bajaLogica;
 
-    public LocalidadesLogica(ILocalidadesRepositorio localidadesRepositorio)
+    public LocalidadesLogica(ILocalidadesRepositorio localidadesRepositorio, IBajaLogica bajaLogica)
     {
         _localidadesRepositorio = localidadesRepositorio;
+        _bajaLogica = bajaLogica;
     }
 
     public Task<IEnumerable<Localidad>> GetLocalidadesAsync()
@@ -32,8 +34,9 @@ public class LocalidadesLogica : ILocalidadesLogica
         return _localidadesRepositorio.UpdateLocalidadAsync(localidad);
     }
 
-    public Task DeleteLocalidadAsync(int id)
+    public async Task DeleteLocalidadAsync(int id)
     {
-        return _localidadesRepositorio.DeleteLocalidadAsync(id);
+        await _bajaLogica.ValidarBajaAsync(EntidadBaja.Localidad, id);
+        await _localidadesRepositorio.DeleteLocalidadAsync(id);
     }
 }

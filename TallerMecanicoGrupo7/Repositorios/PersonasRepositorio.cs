@@ -77,4 +77,17 @@ public class PersonasRepositorio : IPersonasRepositorio
             await _context.SaveChangesAsync();
         }
     }
+
+    public async Task ReactivarPersonaAsync(int id)
+    {
+        var persona = await _context.Personas.FindAsync(id);
+        if (persona is null || persona.Activo)
+            return;
+
+        // Mientras estuvo de baja pudo haberse dado de alta otra persona con
+        // el mismo DNI o CUIL/CUIT (el índice único solo aplica a los activos).
+        await ValidarIdentificadorAsync(persona);
+        persona.Activo = true;
+        await _context.SaveChangesAsync();
+    }
 }

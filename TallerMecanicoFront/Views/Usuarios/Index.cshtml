@@ -8,9 +8,20 @@
     <a asp-action="Create" class="btn btn-primary"><i class="bi bi-person-fill-add"></i> Nuevo Usuario</a>
 </div>
 
+@if (TempData["Exito"] is not null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Exito"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
 @if (TempData["Error"] is not null)
 {
-    <div class="alert alert-danger">@TempData["Error"]</div>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-octagon-fill"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
 }
 
 @if (!ViewData.ModelState.IsValid)
@@ -55,9 +66,14 @@
                                 @if (item.Activo)
                                 {
                                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
-                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Dar de baja este usuario? Vas a poder seguir viendo su detalle, pero no editarlo.');">Dar de baja</button>
-                                    </form>
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            data-confirmar-baja
+                                            data-baja-url="@Url.Action("Delete", new { id = item.Id })"
+                                            data-pendientes-url="@Url.Action("Verificar", "Bajas", new { entidad = "persona", id = item.Id })"
+                                            data-nombre="@($"{item.Apellido}, {item.Nombre}")"
+                                            data-reactivable="false">
+                                        Dar de baja
+                                    </button>
                                 }
                                 else
                                 {
@@ -77,3 +93,5 @@
         </tbody>
     </table>
 </div>
+
+<partial name="_ConfirmarBajaModal" />

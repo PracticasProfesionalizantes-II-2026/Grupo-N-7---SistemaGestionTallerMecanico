@@ -9,4 +9,5 @@ public interface IPersonasRepositorio
     Task AddPersonaAsync(Persona persona);
     Task UpdatePersonaAsync(Persona persona);
     Task DeletePersonaAsync(int id);
+    Task ReactivarPersonaAsync(int id);
 }

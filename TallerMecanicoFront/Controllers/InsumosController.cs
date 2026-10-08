@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc;
+using TallerMecanicoFront.Infrastructure;
 using TallerMecanicoFront.Models;
 
 namespace TallerMecanicoFront.Controllers;
@@ -167,7 +168,9 @@ public class InsumosController : Controller
         var response = await _httpClient.DeleteAsync($"api/insumos/{id}");
         if (!response.IsSuccessStatusCode)
         {
-            TempData["Error"] = "No se pudo eliminar el insumo.";
+            // Si está en uso por turnos pendientes o facturas abiertas, la API
+            // responde 409 con el detalle, que se muestra tal cual en el cartel.
+            TempData["Error"] = await ApiRespuestas.LeerMensajeErrorAsync(response, "No se pudo dar de baja el insumo.");
         }
 
         return RedirectToAction(nameof(Index));

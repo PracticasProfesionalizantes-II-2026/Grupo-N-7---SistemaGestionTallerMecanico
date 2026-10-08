@@ -54,12 +54,7 @@ public class TurnosRepositorio : ITurnosRepositorio
                 && t.Fecha == turno.Fecha)
             .ToListAsync();
 
-        var tieneConflicto = turnosMismaFecha.Any(t =>
-            t.EstadoTurno == null ||
-            (!t.EstadoTurno.Nombre.ToLower().Contains("cancel") &&
-             !t.EstadoTurno.Nombre.ToLower().Contains("anul") &&
-             !t.EstadoTurno.Nombre.ToLower().Contains("finaliz") &&
-             !t.EstadoTurno.Nombre.ToLower().Contains("cerr")));
+        var tieneConflicto = turnosMismaFecha.Any(t => !EstadoTurno.EsEstadoCerrado(t.EstadoTurno?.Nombre));
 
         if (tieneConflicto)
         {
@@ -85,13 +80,46 @@ public class TurnosRepositorio : ITurnosRepositorio
         }
     }
 
+    /// <summary>
+    /// Solo se eliminan turnos pendientes o cancelados, y sin factura:
+    /// - en curso: hay trabajo en marcha en el taller.
+    /// - finalizado / cerrado: es historial del taller.
+    /// - con factura (pagada o no): la factura no se puede eliminar, así que el turno tampoco.
+    /// </summary>
     public async Task DeleteTurnoAsync(int id)
     {
-        var turno = await _context.Turnos.FindAsync(id);
-        if (turno != null)
+        var turno = await _context.Turnos
+            .Include(t => t.EstadoTurno)
+            .Include(t => t.TrabajosPorTurno)
+                .ThenInclude(tp => tp.InsumosConsumidos)
+            .FirstOrDefaultAsync(t => t.Id == id);
+        if (turno is null)
+            return;
+
+        var estado = turno.EstadoTurno?.Nombre;
+        if (!EstadoTurno.PermiteEliminarTurno(estado))
         {
-            _context.Turnos.Remove(turno);
-            await _context.SaveChangesAsync();
+            throw new InvalidOperationException(EstadoTurno.EsEstadoCerrado(estado)
+                ? "Los turnos finalizados o cerrados quedan como historial y no se pueden eliminar."
+                : $"No se puede eliminar un turno en estado \"{estado}\". Solo se pueden eliminar turnos pendientes o cancelados.");
         }
+
+        if (await _context.FacturasVentas.AnyAsync(f => f.IdTurno == id))
+        {
+            throw new InvalidOperationException("El turno tiene una factura asociada y no se puede eliminar.");
+        }
+
+        // El borrado en cascada de TrabajosPorTurno/InsumosPorTrabajo no
+        // devuelve el stock consumido: se repone acá, igual que al quitar
+        // un insumo de un trabajo (InsumosPorTrabajoRepositorio).
+        var versionador = new InsumoVersionador(_context);
+        foreach (var consumo in turno.TrabajosPorTurno.SelectMany(tp => tp.InsumosConsumidos))
+        {
+            var insumo = await versionador.ObtenerVersionActivaAsync(consumo.IdInsumo);
+            insumo.Stock += consumo.Cantidad;
+        }
+
+        _context.Turnos.Remove(turno);
+        await _context.SaveChangesAsync();
     }
 }

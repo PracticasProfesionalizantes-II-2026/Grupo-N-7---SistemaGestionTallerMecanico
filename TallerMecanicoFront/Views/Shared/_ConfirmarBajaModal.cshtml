@@ -1,0 +1,62 @@
+@*
+    Modal único de confirmación de baja/eliminación. Se activa desde cualquier
+    botón con el atributo data-confirmar-baja (ver site.js). Antes de habilitar
+    "Confirmar" consulta si el registro está en uso por turnos pendientes o
+    facturas abiertas; si lo está, muestra el motivo y no deja continuar.
+    La API vuelve a validar lo mismo al momento de la baja.
+*@
+<div class="modal fade" id="modalConfirmarBaja" tabindex="-1" aria-labelledby="modalConfirmarBajaTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" id="formConfirmarBaja">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalConfirmarBajaTitulo">
+                        <i class="bi bi-exclamation-triangle-fill text-warning"></i> <span data-baja-titulo>Dar de baja</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div data-baja-estado="cargando" class="d-flex align-items-center gap-2 text-muted">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        <span>Verificando turnos y facturas abiertas...</span>
+                    </div>
+
+                    <div data-baja-estado="advertencia" class="alert alert-warning mb-0 d-none">
+                        <p class="mb-2">¿Seguro que querés <span data-baja-verbo>dar de baja</span> <strong data-baja-nombre></strong>?</p>
+                        <p class="mb-0 small" data-baja-texto-logica>
+                            Va a dejar de aparecer entre los activos y no se va a poder editar.
+                            <span data-baja-texto-reactivable>Se puede reactivar más adelante filtrando por los dados de baja.</span>
+                        </p>
+                        <p class="mb-0 small" data-baja-texto-fisica>
+                            Se va a eliminar definitivamente. Esta acción no se puede deshacer.
+                        </p>
+                    </div>
+
+                    <div data-baja-estado="bloqueado" class="alert alert-danger mb-0 d-none">
+                        <p class="fw-semibold mb-2">
+                            <i class="bi bi-x-octagon-fill"></i> No se puede <span data-baja-verbo>dar de baja</span> <span data-baja-nombre></span>
+                        </p>
+                        <p class="mb-1">Está en uso en:</p>
+                        <ul class="mb-2">
+                            <li data-baja-turnos></li>
+                            <li data-baja-facturas></li>
+                        </ul>
+                        <p class="mb-0 small">Finalizá o cancelá los turnos pendientes y cobrá/pagá las facturas abiertas antes de continuar.</p>
+                    </div>
+
+                    <div data-baja-estado="sin-verificar" class="alert alert-secondary mb-0 d-none">
+                        No se pudo verificar si <strong data-baja-nombre></strong> tiene turnos o facturas abiertas.
+                        Si confirmás, el sistema lo va a volver a validar antes de continuar.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger" id="botonConfirmarBaja" disabled>
+                        <i class="bi bi-trash3"></i> <span data-baja-boton>Confirmar baja</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

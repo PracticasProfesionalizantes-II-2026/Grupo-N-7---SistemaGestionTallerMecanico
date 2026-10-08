@@ -6,10 +6,12 @@ namespace ClasesTallerMecanico.Logica;
 public class SesionesCajaLogica : ISesionesCajaLogica
 {
     private readonly ISesionesCajaRepositorio _sesionesCajaRepositorio;
+    private readonly IBajaLogica _bajaLogica;
 
-    public SesionesCajaLogica(ISesionesCajaRepositorio sesionesCajaRepositorio)
+    public SesionesCajaLogica(ISesionesCajaRepositorio sesionesCajaRepositorio, IBajaLogica bajaLogica)
     {
         _sesionesCajaRepositorio = sesionesCajaRepositorio;
+        _bajaLogica = bajaLogica;
     }
 
     public Task<IEnumerable<SesionCaja>> GetSesionesCajaAsync()
@@ -32,8 +34,9 @@ public class SesionesCajaLogica : ISesionesCajaLogica
         return _sesionesCajaRepositorio.UpdateSesionCajaAsync(sesionCaja);
     }
 
-    public Task DeleteSesionCajaAsync(int id)
+    public async Task DeleteSesionCajaAsync(int id)
     {
-        return _sesionesCajaRepositorio.DeleteSesionCajaAsync(id);
+        await _bajaLogica.ValidarBajaAsync(EntidadBaja.SesionCaja, id);
+        await _sesionesCajaRepositorio.DeleteSesionCajaAsync(id);
     }
 }

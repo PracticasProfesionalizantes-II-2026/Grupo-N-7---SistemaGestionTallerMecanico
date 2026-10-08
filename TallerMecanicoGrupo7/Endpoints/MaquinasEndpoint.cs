@@ -55,5 +55,15 @@ public static class MaquinasEndpoint
             await logica.DeleteMaquinaAsync(id);
             return Results.NoContent();
         });
+
+        app.MapPost("/api/maquinas/{id}/reactivar", async (int id, IMaquinasLogica logica) =>
+        {
+            var existingMaquina = await logica.GetMaquinaByIdAsync(id);
+            if (existingMaquina is null)
+                return Results.NotFound();
+
+            await logica.ReactivarMaquinaAsync(id);
+            return Results.NoContent();
+        });
     }
 }

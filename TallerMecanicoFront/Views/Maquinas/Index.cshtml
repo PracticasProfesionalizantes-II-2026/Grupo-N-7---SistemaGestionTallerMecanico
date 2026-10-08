@@ -10,9 +10,20 @@
     <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-circle-fill"></i> Nueva Máquina</a>
 </div>
 
+@if (TempData["Exito"] is not null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Exito"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
 @if (TempData["Error"] is not null)
 {
-    <div class="alert alert-danger">@TempData["Error"]</div>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-octagon-fill"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
 }
 
 @if (!ViewData.ModelState.IsValid)
@@ -94,13 +105,22 @@
                                 @if (item.Activo)
                                 {
                                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
-                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Dar de baja este máquina? Vas a poder seguir viendo su detalle, pero no editarlo.');">Dar de baja</button>
-                                    </form>
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            data-confirmar-baja
+                                            data-baja-url="@Url.Action("Delete", new { id = item.Id })"
+                                            data-pendientes-url="@Url.Action("Verificar", "Bajas", new { entidad = "maquina", id = item.Id })"
+                                            data-nombre="@($"{item.Nombre} ({item.Patente})")">
+                                        Dar de baja
+                                    </button>
                                 }
                                 else
                                 {
                                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Ver detalle</a>
+                                    <form asp-action="Reactivar" asp-route-id="@item.Id" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-success" onclick="return confirm('¿Reactivar esta máquina? Va a volver a aparecer entre las activas y se va a poder editar.');">
+                                            <i class="bi bi-arrow-counterclockwise"></i> Reactivar
+                                        </button>
+                                    </form>
                                 }
                             </div>
                         </td>
@@ -125,3 +145,5 @@
         </tbody>
     </table>
 </div>
+
+<partial name="_ConfirmarBajaModal" />

@@ -31,9 +31,4 @@ public class FacturasComprasLogica : IFacturasComprasLogica
     {
         return _facturasComprasRepositorio.UpdateFacturaCompraAsync(facturaCompra);
     }
-
-    public Task DeleteFacturaCompraAsync(int id)
-    {
-        return _facturasComprasRepositorio.DeleteFacturaCompraAsync(id);
-    }
 }

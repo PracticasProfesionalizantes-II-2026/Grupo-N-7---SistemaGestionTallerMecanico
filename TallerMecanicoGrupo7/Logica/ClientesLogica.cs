@@ -6,10 +6,12 @@ namespace ClasesTallerMecanico.Logica;
 public class ClientesLogica : IClientesLogica
 {
     private readonly IClientesRepositorio _clientesRepositorio;
+    private readonly IBajaLogica _bajaLogica;
 
-    public ClientesLogica(IClientesRepositorio clientesRepositorio)
+    public ClientesLogica(IClientesRepositorio clientesRepositorio, IBajaLogica bajaLogica)
     {
         _clientesRepositorio = clientesRepositorio;
+        _bajaLogica = bajaLogica;
     }
 
     public Task<IEnumerable<Cliente>> GetClientesAsync()
@@ -32,8 +34,14 @@ public class ClientesLogica : IClientesLogica
         return _clientesRepositorio.UpdateClienteAsync(cliente);
     }
 
-    public Task DeleteClienteAsync(int id)
+    public async Task DeleteClienteAsync(int id)
     {
-        return _clientesRepositorio.DeleteClienteAsync(id);
+        await _bajaLogica.ValidarBajaAsync(EntidadBaja.Persona, id);
+        await _clientesRepositorio.DeleteClienteAsync(id);
+    }
+
+    public Task ReactivarClienteAsync(int id)
+    {
+        return _clientesRepositorio.ReactivarClienteAsync(id);
     }
 }

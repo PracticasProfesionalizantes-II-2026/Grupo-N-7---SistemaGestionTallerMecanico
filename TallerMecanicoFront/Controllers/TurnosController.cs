@@ -101,6 +101,15 @@ public class TurnosController : Controller
             }
         }
         ViewBag.TurnosBloqueados = turnosBloqueados;
+
+        // Un turno con factura (pagada o no) nunca se puede eliminar: se usa
+        // para mostrar el botón Eliminar solo en turnos cancelados sin factura.
+        var facturasResponse = await _httpClient.GetAsync("api/facturas-ventas");
+        ViewBag.TurnosConFactura = facturasResponse.IsSuccessStatusCode
+            ? (await facturasResponse.Content.ReadFromJsonAsync<List<FacturaVenta>>() ?? new List<FacturaVenta>())
+                .Select(f => f.IdTurno)
+                .ToHashSet()
+            : new HashSet<int>();
         ViewBag.Buscar = buscar;
         ViewBag.Estado = estadoNormalizado;
 
@@ -240,19 +249,12 @@ public class TurnosController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
-        if (await TurnoEstaBloqueadoAsync(id))
-        {
-            TempData["Error"] = "El turno está asociado a una factura pagada o cerrado y no puede eliminarse.";
-            return RedirectToAction(nameof(Index));
-        }
-
+        // La API solo elimina turnos cancelados y sin factura; si no se
+        // cumple, devuelve el motivo y se muestra en el cartel de error.
         var response = await _httpClient.DeleteAsync($"api/turnos/{id}");
         if (!response.IsSuccessStatusCode)
         {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            TempData["Error"] = string.IsNullOrWhiteSpace(errorContent)
-                ? "No se pudo eliminar el turno."
-                : errorContent;
+            TempData["Error"] = await ApiRespuestas.LeerMensajeErrorAsync(response, "No se pudo eliminar el turno.");
         }
 
         return RedirectToAction(nameof(Index));

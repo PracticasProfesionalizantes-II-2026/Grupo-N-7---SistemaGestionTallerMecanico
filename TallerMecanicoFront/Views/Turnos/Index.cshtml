@@ -4,6 +4,7 @@
     ViewData["Title"] = "Turnos";
     var estadosTurno = ViewBag.EstadosTurno as IEnumerable<EstadoTurno> ?? Enumerable.Empty<EstadoTurno>();
     var turnosBloqueados = ViewBag.TurnosBloqueados as HashSet<int> ?? new HashSet<int>();
+    var turnosConFactura = ViewBag.TurnosConFactura as HashSet<int> ?? new HashSet<int>();
     var estadoActual = (ViewBag.Estado as string) ?? "activos";
     var busquedaActual = (ViewBag.Buscar as string) ?? string.Empty;
 
@@ -24,7 +25,10 @@
 
 @if (TempData["Error"] is not null)
 {
-    <div class="alert alert-danger">@TempData["Error"]</div>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-octagon-fill"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
 }
 
 @if (!ViewData.ModelState.IsValid)
@@ -100,6 +104,13 @@
                         || string.Equals(estadoNombre.Trim(), "Cerrado", StringComparison.OrdinalIgnoreCase)
                         || string.Equals(estadoNombre.Trim(), "Cancelado", StringComparison.OrdinalIgnoreCase);
                     var turnoSoloLectura = turnoFinalizado || turnosBloqueados.Contains(item.Id);
+                    // Mismo criterio que EstadoTurno.PermiteEliminarTurno en la API:
+                    // solo pendientes (o sin estado) y cancelados, y sin factura.
+                    var turnoPendiente = !item.IdEstado.HasValue
+                        || estadoNombre.Contains("pendient", StringComparison.OrdinalIgnoreCase);
+                    var turnoCancelado = estadoNombre.Contains("cancel", StringComparison.OrdinalIgnoreCase)
+                        || estadoNombre.Contains("anul", StringComparison.OrdinalIgnoreCase);
+                    var turnoEliminable = (turnoPendiente || turnoCancelado) && !turnosConFactura.Contains(item.Id);
 
                     var clienteTexto = clientes.TryGetValue(item.IdCliente, out var cli)
                         ? $"{cli.Apellido}, {cli.Nombre}"
@@ -147,11 +158,17 @@
                                 @if (!turnoSoloLectura)
                                 {
                                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
-                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar este turno?');">
-                                            Eliminar
-                                        </button>
-                                    </form>
+                                }
+                                @* En curso / finalizado / con factura: sin botón Eliminar. *@
+                                @if (turnoEliminable)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            data-confirmar-baja
+                                            data-baja-url="@Url.Action("Delete", new { id = item.Id })"
+                                            data-nombre="@($"el turno #{item.Id}")"
+                                            data-eliminacion="true">
+                                        Eliminar
+                                    </button>
                                 }
                             </div>
                         </td>
@@ -176,3 +193,5 @@
         </tbody>
     </table>
 </div>
+
+<partial name="_ConfirmarBajaModal" />

@@ -6,10 +6,12 @@ namespace ClasesTallerMecanico.Logica;
 public class EstadosTurnoLogica : IEstadosTurnoLogica
 {
     private readonly IEstadosTurnoRepositorio _estadosTurnoRepositorio;
+    private readonly IBajaLogica _bajaLogica;
 
-    public EstadosTurnoLogica(IEstadosTurnoRepositorio estadosTurnoRepositorio)
+    public EstadosTurnoLogica(IEstadosTurnoRepositorio estadosTurnoRepositorio, IBajaLogica bajaLogica)
     {
         _estadosTurnoRepositorio = estadosTurnoRepositorio;
+        _bajaLogica = bajaLogica;
     }
 
     public Task<IEnumerable<EstadoTurno>> GetEstadosTurnoAsync()
@@ -32,8 +34,9 @@ public class EstadosTurnoLogica : IEstadosTurnoLogica
         return _estadosTurnoRepositorio.UpdateEstadoTurnoAsync(estadoTurno);
     }
 
-    public Task DeleteEstadoTurnoAsync(int id)
+    public async Task DeleteEstadoTurnoAsync(int id)
     {
-        return _estadosTurnoRepositorio.DeleteEstadoTurnoAsync(id);
+        await _bajaLogica.ValidarBajaAsync(EntidadBaja.EstadoTurno, id);
+        await _estadosTurnoRepositorio.DeleteEstadoTurnoAsync(id);
     }
 }

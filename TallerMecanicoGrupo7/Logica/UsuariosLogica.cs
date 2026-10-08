@@ -6,10 +6,12 @@ namespace ClasesTallerMecanico.Logica;
 public class UsuariosLogica : IUsuariosLogica
 {
     private readonly IUsuariosRepositorio _usuariosRepositorio;
+    private readonly IBajaLogica _bajaLogica;
 
-    public UsuariosLogica(IUsuariosRepositorio usuariosRepositorio)
+    public UsuariosLogica(IUsuariosRepositorio usuariosRepositorio, IBajaLogica bajaLogica)
     {
         _usuariosRepositorio = usuariosRepositorio;
+        _bajaLogica = bajaLogica;
     }
 
     public Task<IEnumerable<Usuario>> GetUsuariosAsync()
@@ -37,8 +39,9 @@ public class UsuariosLogica : IUsuariosLogica
         return _usuariosRepositorio.UpdateUsuarioAsync(usuario);
     }
 
-    public Task DeleteUsuarioAsync(int id)
+    public async Task DeleteUsuarioAsync(int id)
     {
-        return _usuariosRepositorio.DeleteUsuarioAsync(id);
+        await _bajaLogica.ValidarBajaAsync(EntidadBaja.Persona, id);
+        await _usuariosRepositorio.DeleteUsuarioAsync(id);
     }
 }

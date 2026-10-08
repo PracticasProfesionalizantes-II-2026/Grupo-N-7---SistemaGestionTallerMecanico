@@ -55,5 +55,15 @@ public static class ClientesEndpoint
             await logica.DeleteClienteAsync(id);
             return Results.NoContent();
         });
+
+        app.MapPost("/api/clientes/{id}/reactivar", async (int id, IClientesLogica logica) =>
+        {
+            var existingCliente = await logica.GetClienteByIdAsync(id);
+            if (existingCliente is null)
+                return Results.NotFound();
+
+            await logica.ReactivarClienteAsync(id);
+            return Results.NoContent();
+        });
     }
 }

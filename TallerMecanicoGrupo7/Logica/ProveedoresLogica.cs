@@ -6,10 +6,12 @@ namespace ClasesTallerMecanico.Logica;
 public class ProveedoresLogica : IProveedoresLogica
 {
     private readonly IProveedoresRepositorio _proveedoresRepositorio;
+    private readonly IBajaLogica _bajaLogica;
 
-    public ProveedoresLogica(IProveedoresRepositorio proveedoresRepositorio)
+    public ProveedoresLogica(IProveedoresRepositorio proveedoresRepositorio, IBajaLogica bajaLogica)
     {
         _proveedoresRepositorio = proveedoresRepositorio;
+        _bajaLogica = bajaLogica;
     }
 
     public Task<IEnumerable<Proveedor>> GetProveedoresAsync()
@@ -32,8 +34,9 @@ public class ProveedoresLogica : IProveedoresLogica
         return _proveedoresRepositorio.UpdateProveedorAsync(proveedor);
     }
 
-    public Task DeleteProveedorAsync(int id)
+    public async Task DeleteProveedorAsync(int id)
     {
-        return _proveedoresRepositorio.DeleteProveedorAsync(id);
+        await _bajaLogica.ValidarBajaAsync(EntidadBaja.Persona, id);
+        await _proveedoresRepositorio.DeleteProveedorAsync(id);
     }
 }

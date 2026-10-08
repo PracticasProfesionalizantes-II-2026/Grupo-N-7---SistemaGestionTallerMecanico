@@ -6,10 +6,12 @@ namespace ClasesTallerMecanico.Logica;
 public class TrabajosLogica : ITrabajosLogica
 {
     private readonly ITrabajosRepositorio _trabajosRepositorio;
+    private readonly IBajaLogica _bajaLogica;
 
-    public TrabajosLogica(ITrabajosRepositorio trabajosRepositorio)
+    public TrabajosLogica(ITrabajosRepositorio trabajosRepositorio, IBajaLogica bajaLogica)
     {
         _trabajosRepositorio = trabajosRepositorio;
+        _bajaLogica = bajaLogica;
     }
 
     public Task<IEnumerable<Trabajo>> GetTrabajosAsync()
@@ -32,8 +34,9 @@ public class TrabajosLogica : ITrabajosLogica
         return _trabajosRepositorio.UpdateTrabajoAsync(trabajo);
     }
 
-    public Task DeleteTrabajoAsync(int id)
+    public async Task DeleteTrabajoAsync(int id)
     {
-        return _trabajosRepositorio.DeleteTrabajoAsync(id);
+        await _bajaLogica.ValidarBajaAsync(EntidadBaja.Trabajo, id);
+        await _trabajosRepositorio.DeleteTrabajoAsync(id);
     }
 }

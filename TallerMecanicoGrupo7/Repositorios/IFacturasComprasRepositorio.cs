@@ -8,5 +8,4 @@ public interface IFacturasComprasRepositorio
     Task<FacturaCompra> GetFacturaCompraByIdAsync(int id);
     Task AddFacturaCompraAsync(FacturaCompra facturaCompra);
     Task UpdateFacturaCompraAsync(FacturaCompra facturaCompra);
-    Task DeleteFacturaCompraAsync(int id);
 }

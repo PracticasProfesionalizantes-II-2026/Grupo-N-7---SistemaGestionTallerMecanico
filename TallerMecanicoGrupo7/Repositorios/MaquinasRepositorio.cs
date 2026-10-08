@@ -69,4 +69,27 @@ public class MaquinasRepositorio : IMaquinasRepositorio
             await _context.SaveChangesAsync();
         }
     }
+
+    public async Task ReactivarMaquinaAsync(int id)
+    {
+        var maquina = await _context.Maquinas.FindAsync(id);
+        if (maquina is null || maquina.Activo)
+            return;
+
+        // Una máquina activa de un cliente dado de baja quedaría huérfana en
+        // los listados (no se le podrían sacar turnos): se reactiva primero el cliente.
+        var clienteActivo = await _context.Clientes.AnyAsync(c => c.Id == maquina.IdCliente && c.Activo);
+        if (!clienteActivo)
+            throw new InvalidOperationException("No se puede reactivar la máquina porque su cliente está dado de baja. Reactivá primero el cliente.");
+
+        // Mientras estuvo de baja pudo registrarse otra máquina con la misma
+        // patente (el índice único solo aplica a las activas).
+        var patenteSinEspacios = (maquina.Patente ?? string.Empty).Trim().ToUpperInvariant().Replace(" ", "");
+        var duplicado = await _context.Maquinas.AnyAsync(x => x.Id != maquina.Id && x.Activo && x.Patente.ToUpper().Replace(" ", "") == patenteSinEspacios);
+        if (duplicado)
+            throw new InvalidOperationException($"No se puede reactivar: ya existe otro vehículo activo con la patente '{maquina.Patente}'.");
+
+        maquina.Activo = true;
+        await _context.SaveChangesAsync();
+    }
 }

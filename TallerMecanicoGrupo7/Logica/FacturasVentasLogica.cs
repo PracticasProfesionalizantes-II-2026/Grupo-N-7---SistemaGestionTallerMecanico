@@ -37,9 +37,4 @@ public class FacturasVentasLogica : IFacturasVentasLogica
     {
         return _facturasVentasRepositorio.UpdateFacturaVentaAsync(facturaVenta);
     }
-
-    public Task DeleteFacturaVentaAsync(int id)
-    {
-        return _facturasVentasRepositorio.DeleteFacturaVentaAsync(id);
-    }
 }

@@ -101,16 +101,13 @@ public static class TurnosEndpoint
             return Results.NoContent();
         });
 
-        app.MapDelete("/api/turnos/{id}", async (int id, ITurnosLogica logica, IFacturasVentasLogica facturasVentasLogica) =>
+        app.MapDelete("/api/turnos/{id}", async (int id, ITurnosLogica logica) =>
         {
             var existingTurno = await logica.GetTurnoByIdAsync(id);
             if (existingTurno is null)
                 return Results.NotFound();
 
-            var facturas = await facturasVentasLogica.GetFacturasVentasAsync();
-            if (facturas.Any(x => x.IdTurno == id && x.Pagado))
-                return Results.Conflict(new { message = "El turno está asociado a una factura pagada y no puede eliminarse." });
-
+            // Las reglas (solo cancelados y sin factura) viven en el repositorio.
             await logica.DeleteTurnoAsync(id);
             return Results.NoContent();
         });

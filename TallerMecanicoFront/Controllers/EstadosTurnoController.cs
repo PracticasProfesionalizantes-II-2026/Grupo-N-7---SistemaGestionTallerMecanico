@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc;
+using TallerMecanicoFront.Infrastructure;
 using TallerMecanicoFront.Models;
 
 namespace TallerMecanicoFront.Controllers;
@@ -117,7 +118,9 @@ public class EstadosTurnoController : Controller
         var response = await _httpClient.DeleteAsync($"api/estados-turno/{id}");
         if (!response.IsSuccessStatusCode)
         {
-            TempData["Error"] = "No se pudo eliminar el estado de turno.";
+            // Si está en uso por turnos pendientes o facturas abiertas, la API
+            // responde 409 con el detalle, que se muestra tal cual en el cartel.
+            TempData["Error"] = await ApiRespuestas.LeerMensajeErrorAsync(response, "No se pudo eliminar el estado de turno.");
         }
 
         return RedirectToAction(nameof(Index));

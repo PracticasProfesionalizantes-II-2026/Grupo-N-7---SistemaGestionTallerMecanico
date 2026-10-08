@@ -55,17 +55,7 @@ public static class FacturasVentasEndpoint
             return Results.NoContent();
         });
 
-        app.MapDelete("/api/facturas-ventas/{id}", async (int id, IFacturasVentasLogica logica) =>
-        {
-            var existingFacturaVenta = await logica.GetFacturaVentaByIdAsync(id);
-            if (existingFacturaVenta is null)
-                return Results.NotFound();
-
-            if (existingFacturaVenta.Pagado)
-                return Results.Conflict(new { message = "La factura de venta está pagada y no puede eliminarse." });
-
-            await logica.DeleteFacturaVentaAsync(id);
-            return Results.NoContent();
-        });
+        // Sin DELETE a propósito: las facturas no se eliminan. Las impagas se
+        // corrigen editándolas y las pagadas quedan como historial contable.
     }
 }

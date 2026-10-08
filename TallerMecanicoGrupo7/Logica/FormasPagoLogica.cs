@@ -6,10 +6,12 @@ namespace ClasesTallerMecanico.Logica;
 public class FormasPagoLogica : IFormasPagoLogica
 {
     private readonly IFormasPagoRepositorio _formasPagoRepositorio;
+    private readonly IBajaLogica _bajaLogica;
 
-    public FormasPagoLogica(IFormasPagoRepositorio formasPagoRepositorio)
+    public FormasPagoLogica(IFormasPagoRepositorio formasPagoRepositorio, IBajaLogica bajaLogica)
     {
         _formasPagoRepositorio = formasPagoRepositorio;
+        _bajaLogica = bajaLogica;
     }
 
     public Task<IEnumerable<FormaPago>> GetFormasPagoAsync()
@@ -32,8 +34,9 @@ public class FormasPagoLogica : IFormasPagoLogica
         return _formasPagoRepositorio.UpdateFormaPagoAsync(formaPago);
     }
 
-    public Task DeleteFormaPagoAsync(int id)
+    public async Task DeleteFormaPagoAsync(int id)
     {
-        return _formasPagoRepositorio.DeleteFormaPagoAsync(id);
+        await _bajaLogica.ValidarBajaAsync(EntidadBaja.FormaPago, id);
+        await _formasPagoRepositorio.DeleteFormaPagoAsync(id);
     }
 }

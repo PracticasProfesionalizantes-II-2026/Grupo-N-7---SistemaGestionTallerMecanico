@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TallerMecanicoFront.Infrastructure;
 using TallerMecanicoFront.Models;
 
 namespace TallerMecanicoFront.Controllers;
@@ -188,7 +189,9 @@ public class ProveedoresController : Controller
         var response = await _httpClient.DeleteAsync($"api/proveedores/{id}");
         if (!response.IsSuccessStatusCode)
         {
-            TempData["Error"] = "No se pudo eliminar el proveedor.";
+            // Si tiene turnos pendientes o facturas abiertas la API responde 409
+            // con el detalle, que se muestra tal cual en el cartel de error.
+            TempData["Error"] = await ApiRespuestas.LeerMensajeErrorAsync(response, "No se pudo dar de baja el proveedor.");
         }
 
         return RedirectToAction(nameof(Index));

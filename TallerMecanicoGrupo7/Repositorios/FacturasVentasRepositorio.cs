@@ -132,16 +132,6 @@ public class FacturasVentasRepositorio : IFacturasVentasRepositorio
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteFacturaVentaAsync(int id)
-    {
-        var facturaVenta = await _context.FacturasVentas.FindAsync(id);
-        if (facturaVenta != null)
-        {
-            _context.FacturasVentas.Remove(facturaVenta);
-            await _context.SaveChangesAsync();
-        }
-    }
-
     private async Task<decimal> CalcularTotalTurnoAsync(int idTurno)
     {
         var totalManoObra = await CalcularTotalManoObraAsync(idTurno);
