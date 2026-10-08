@@ -210,32 +210,8 @@ public class FacturasComprasController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
-    {
-        var facturaActualResponse = await _httpClient.GetAsync($"api/facturas-compras/{id}");
-        if (facturaActualResponse.IsSuccessStatusCode)
-        {
-            var facturaActual = await facturaActualResponse.Content.ReadFromJsonAsync<FacturaCompra>();
-            if (facturaActual is not null && facturaActual.Pagado)
-            {
-                TempData["Error"] = "La factura de compra está pagada y no puede eliminarse.";
-                return RedirectToAction(nameof(Index));
-            }
-        }
-
-        var response = await _httpClient.DeleteAsync($"api/facturas-compras/{id}");
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            TempData["Error"] = string.IsNullOrWhiteSpace(errorContent)
-                ? "No se pudo eliminar la factura de compra."
-                : errorContent;
-        }
-
-        return RedirectToAction(nameof(Index));
-    }
+    // Sin acción Delete a propósito: las facturas no se eliminan (las impagas
+    // se corrigen con Editar y las pagadas quedan como historial contable).
 
     private async Task CargarOpcionesAsync()
     {

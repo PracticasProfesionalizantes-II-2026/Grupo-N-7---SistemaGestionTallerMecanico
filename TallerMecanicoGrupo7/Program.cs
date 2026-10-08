@@ -60,6 +60,8 @@ builder.Services.AddScoped<IMaquinasRepositorio, MaquinasRepositorio>();
 builder.Services.AddScoped<IMaquinasLogica, MaquinasLogica>();
 builder.Services.AddScoped<IPersonasRepositorio, PersonasRepositorio>();
 builder.Services.AddScoped<IPersonasLogica, PersonasLogica>();
+builder.Services.AddScoped<IPendientesBajaRepositorio, PendientesBajaRepositorio>();
+builder.Services.AddScoped<IBajaLogica, BajaLogica>();
 builder.Services.AddScoped<IProveedoresRepositorio, ProveedoresRepositorio>();
 builder.Services.AddScoped<IProveedoresLogica, ProveedoresLogica>();
 builder.Services.AddScoped<IRolesRepositorio, RolesRepositorio>();
@@ -99,6 +101,29 @@ app.Use(async (context, next) =>
     {
         await next();
     }
+    catch (BajaBloqueadaException ex)
+    {
+        // 409: el recurso existe pero su estado actual (turnos/facturas abiertas)
+        // impide la baja. Se devuelve el detalle para que el front lo muestre.
+        context.Response.StatusCode = StatusCodes.Status409Conflict;
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = ex.Message,
+            turnosPendientes = ex.Pendientes.TurnosPendientes,
+            facturasAbiertas = ex.Pendientes.FacturasAbiertas
+        });
+    }
+    catch (DbUpdateException) when (HttpMethods.IsDelete(context.Request.Method))
+    {
+        // Eliminación física (tipos/estados de turno, formas de pago, localidades,
+        // sesiones de caja) de un registro todavía referenciado por turnos o
+        // facturas ya cerrados: la FK con Restrict/NoAction la rechaza.
+        context.Response.StatusCode = StatusCodes.Status409Conflict;
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = "No se puede eliminar porque está siendo usado por otros registros (turnos, facturas, etc.)."
+        });
+    }
     catch (InvalidOperationException ex)
     {
         context.Response.StatusCode = StatusCodes.Status400BadRequest;
@@ -108,6 +133,7 @@ app.Use(async (context, next) =>
 
 app.MapCategoriasTrabajosEndpoints();
 app.MapAuditoriasEndpoints();
+app.MapBajasEndpoints();
 app.MapConfiguracionEndpoints();
 app.MapClientesEndpoints();
 app.MapDetallesFacturasComprasEndpoints();

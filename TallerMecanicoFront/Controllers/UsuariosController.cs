@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TallerMecanicoFront.Infrastructure;
+using TallerMecanicoFront.Infrastructure;
 using TallerMecanicoFront.Models;
 
 namespace TallerMecanicoFront.Controllers;
@@ -282,7 +283,9 @@ public class UsuariosController : Controller
         var response = await _httpClient.DeleteAsync($"api/usuarios/{id}");
         if (!response.IsSuccessStatusCode)
         {
-            TempData["Error"] = "No se pudo eliminar el usuario.";
+            // Si tiene turnos pendientes o facturas abiertas la API responde 409
+            // con el detalle, que se muestra tal cual en el cartel de error.
+            TempData["Error"] = await ApiRespuestas.LeerMensajeErrorAsync(response, "No se pudo dar de baja el usuario.");
         }
 
         return RedirectToAction(nameof(Index));

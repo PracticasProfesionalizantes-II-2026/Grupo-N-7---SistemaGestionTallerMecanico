@@ -6,10 +6,12 @@ namespace ClasesTallerMecanico.Logica;
 public class MaquinasLogica : IMaquinasLogica
 {
     private readonly IMaquinasRepositorio _maquinasRepositorio;
+    private readonly IBajaLogica _bajaLogica;
 
-    public MaquinasLogica(IMaquinasRepositorio maquinasRepositorio)
+    public MaquinasLogica(IMaquinasRepositorio maquinasRepositorio, IBajaLogica bajaLogica)
     {
         _maquinasRepositorio = maquinasRepositorio;
+        _bajaLogica = bajaLogica;
     }
 
     public Task<IEnumerable<Maquina>> GetMaquinasAsync()
@@ -32,8 +34,14 @@ public class MaquinasLogica : IMaquinasLogica
         return _maquinasRepositorio.UpdateMaquinaAsync(maquina);
     }
 
-    public Task DeleteMaquinaAsync(int id)
+    public async Task DeleteMaquinaAsync(int id)
     {
-        return _maquinasRepositorio.DeleteMaquinaAsync(id);
+        await _bajaLogica.ValidarBajaAsync(EntidadBaja.Maquina, id);
+        await _maquinasRepositorio.DeleteMaquinaAsync(id);
+    }
+
+    public Task ReactivarMaquinaAsync(int id)
+    {
+        return _maquinasRepositorio.ReactivarMaquinaAsync(id);
     }
 }

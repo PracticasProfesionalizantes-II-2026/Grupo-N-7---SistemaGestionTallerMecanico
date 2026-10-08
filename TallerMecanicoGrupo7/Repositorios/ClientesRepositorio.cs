@@ -64,4 +64,17 @@ public class ClientesRepositorio : IClientesRepositorio
             await _context.SaveChangesAsync();
         }
     }
+
+    public async Task ReactivarClienteAsync(int id)
+    {
+        var cliente = await _context.Clientes.FindAsync(id);
+        if (cliente is null || cliente.Activo)
+            return;
+
+        // Mientras estuvo de baja pudo haberse dado de alta otra persona con
+        // el mismo CUIL/CUIT (el índice único solo aplica a los activos).
+        await ValidarCuilCuitAsync(cliente);
+        cliente.Activo = true;
+        await _context.SaveChangesAsync();
+    }
 }

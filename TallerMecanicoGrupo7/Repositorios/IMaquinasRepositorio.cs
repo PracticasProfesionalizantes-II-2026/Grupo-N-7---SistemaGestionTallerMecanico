@@ -9,4 +9,5 @@ public interface IMaquinasRepositorio
     Task AddMaquinaAsync(Maquina maquina);
     Task UpdateMaquinaAsync(Maquina maquina);
     Task DeleteMaquinaAsync(int id);
+    Task ReactivarMaquinaAsync(int id);
 }

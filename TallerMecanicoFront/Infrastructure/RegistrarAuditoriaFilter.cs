@@ -71,11 +71,18 @@ public class RegistrarAuditoriaFilter : IAsyncActionFilter
         if (executedContext.Result is not (RedirectToActionResult or RedirectResult))
             return;
 
+        // Delete/Reactivar redirigen a Index aun cuando la API rechaza la
+        // operación (ej. baja bloqueada por turnos pendientes); en ese caso
+        // dejan el motivo en TempData["Error"] y no hay nada que auditar.
+        if (executedContext.Controller is Controller controller && controller.TempData.ContainsKey("Error"))
+            return;
+
         var accionLegible = accion switch
         {
             "Create" => "Alta",
             "Edit" => "Modificación",
             "Delete" => "Baja",
+            "Reactivar" => "Reactivación",
             _ => accion
         };
 

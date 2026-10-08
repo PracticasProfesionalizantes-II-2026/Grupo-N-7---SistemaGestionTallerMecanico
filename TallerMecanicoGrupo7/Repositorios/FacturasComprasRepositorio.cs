@@ -76,14 +76,4 @@ public class FacturasComprasRepositorio : IFacturasComprasRepositorio
         _context.FacturasCompras.Update(facturaCompra);
         await _context.SaveChangesAsync();
     }
-
-    public async Task DeleteFacturaCompraAsync(int id)
-    {
-        var facturaCompra = await _context.FacturasCompras.FindAsync(id);
-        if (facturaCompra != null)
-        {
-            _context.FacturasCompras.Remove(facturaCompra);
-            await _context.SaveChangesAsync();
-        }
-    }
 }

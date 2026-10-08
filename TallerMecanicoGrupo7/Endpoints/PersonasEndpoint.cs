@@ -63,5 +63,15 @@ public static class PersonasEndpoint
             await logica.DeletePersonaAsync(id);
             return Results.NoContent();
         });
+
+        app.MapPost("/api/personas/{id}/reactivar", async (int id, IPersonasLogica logica) =>
+        {
+            var existingPersona = await logica.GetPersonaByIdAsync(id);
+            if (existingPersona is null)
+                return Results.NotFound();
+
+            await logica.ReactivarPersonaAsync(id);
+            return Results.NoContent();
+        });
     }
 }

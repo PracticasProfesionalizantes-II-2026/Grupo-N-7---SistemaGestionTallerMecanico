@@ -44,19 +44,20 @@
 <div class="dashboard-panel">
     <h2 class="h4 mb-4">Estadística de la semana</h2>
     <div class="row text-center g-4">
+        @* Chart.js fuerza display:block en el canvas, por eso se centra con mx-auto (text-center no alcanza). *@
         <div class="col-12 col-md-6">
             <p class="text-white-50 mb-2">En curso</p>
-            <canvas id="donutTotalTurnos" width="220" height="220"></canvas>
+            <canvas id="donutTotalTurnos" class="d-block mx-auto" width="220" height="220"></canvas>
         </div>
         <div class="col-12 col-md-6">
             <p class="text-white-50 mb-2">Pendientes</p>
-            <canvas id="donutPendientes" width="220" height="220"></canvas>
+            <canvas id="donutPendientes" class="d-block mx-auto" width="220" height="220"></canvas>
+            @if (Model.TurnosSemana == 0)
+            {
+                <p class="text-white-50 small mt-3 mb-0">No hay turnos cargados para los próximos 7 días.</p>
+            }
         </div>
     </div>
-    @if (Model.TurnosSemana == 0)
-    {
-        <p class="text-white-50 text-center mt-3 mb-0">No hay turnos cargados para los próximos 7 días (afecta solo al gráfico "Pendientes").</p>
-    }
 </div>
 
 @section Scripts {

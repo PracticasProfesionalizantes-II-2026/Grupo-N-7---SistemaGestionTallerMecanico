@@ -11,7 +11,10 @@
 
 @if (TempData["Error"] is not null)
 {
-    <div class="alert alert-danger">@TempData["Error"]</div>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-octagon-fill"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
 }
 
 @if (!ViewData.ModelState.IsValid)
@@ -56,11 +59,14 @@
                             {
                                 <div class="d-inline-flex gap-2">
                                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
-                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Seguro que deseas eliminar esta sesión de caja?');">
-                                            Eliminar
-                                        </button>
-                                    </form>
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            data-confirmar-baja
+                                            data-baja-url="@Url.Action("Delete", new { id = item.Id })"
+                                            data-pendientes-url="@Url.Action("Verificar", "Bajas", new { entidad = "sesioncaja", id = item.Id })"
+                                            data-nombre="@($"la sesión de caja #{item.Id}")"
+                                            data-eliminacion="true">
+                                        Eliminar
+                                    </button>
                                 </div>
                             }
                         </td>
@@ -76,3 +82,5 @@
         </tbody>
     </table>
 </div>
+
+<partial name="_ConfirmarBajaModal" />

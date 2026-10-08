@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc;
+using TallerMecanicoFront.Infrastructure;
 using TallerMecanicoFront.Models;
 
 namespace TallerMecanicoFront.Controllers;
@@ -137,7 +138,9 @@ public class CategoriasTrabajosController : Controller
         var response = await _httpClient.DeleteAsync($"api/categorias-trabajos/{id}");
         if (!response.IsSuccessStatusCode)
         {
-            TempData["Error"] = "No se pudo eliminar la categoria de trabajo.";
+            // Si está en uso por turnos pendientes o facturas abiertas, la API
+            // responde 409 con el detalle, que se muestra tal cual en el cartel.
+            TempData["Error"] = await ApiRespuestas.LeerMensajeErrorAsync(response, "No se pudo dar de baja la categoría de trabajo.");
         }
 
         return RedirectToAction(nameof(Index));

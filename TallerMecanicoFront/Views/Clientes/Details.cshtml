@@ -34,4 +34,14 @@
     <dd class="col-sm-9">@Model.CondFiscal</dd>
 </dl>
 
-<a asp-action="Index" class="btn btn-secondary">Volver</a>
+<div class="d-flex gap-2">
+    <a asp-action="Index" class="btn btn-secondary">Volver</a>
+    @if (!Model.Activo)
+    {
+        <form asp-action="Reactivar" asp-route-id="@Model.Id" method="post" class="d-inline">
+            <button type="submit" class="btn btn-success" onclick="return confirm('¿Reactivar este cliente? Va a volver a aparecer entre los activos y se va a poder editar.');">
+                <i class="bi bi-arrow-counterclockwise"></i> Reactivar cliente
+            </button>
+        </form>
+    }
+</div>

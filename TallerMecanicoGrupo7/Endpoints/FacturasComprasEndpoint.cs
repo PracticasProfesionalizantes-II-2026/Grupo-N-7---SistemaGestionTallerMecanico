@@ -49,17 +49,7 @@ public static class FacturasComprasEndpoint
             return Results.NoContent();
         });
 
-        app.MapDelete("/api/facturas-compras/{id}", async (int id, IFacturasComprasLogica logica) =>
-        {
-            var existingFacturaCompra = await logica.GetFacturaCompraByIdAsync(id);
-            if (existingFacturaCompra is null)
-                return Results.NotFound();
-
-            if (existingFacturaCompra.Pagado)
-                return Results.Conflict(new { message = "La factura de compra está pagada y no puede eliminarse." });
-
-            await logica.DeleteFacturaCompraAsync(id);
-            return Results.NoContent();
-        });
+        // Sin DELETE a propósito: las facturas no se eliminan. Las impagas se
+        // corrigen editándolas y las pagadas quedan como historial contable.
     }
 }

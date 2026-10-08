@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc;
+using TallerMecanicoFront.Infrastructure;
 using TallerMecanicoFront.Models;
 
 namespace TallerMecanicoFront.Controllers;
@@ -135,7 +136,26 @@ public class PersonasController : Controller
         var response = await _httpClient.DeleteAsync($"api/personas/{id}");
         if (!response.IsSuccessStatusCode)
         {
-            TempData["Error"] = "No se pudo eliminar la persona.";
+            // Si tiene turnos pendientes o facturas abiertas la API responde 409
+            // con el detalle, que se muestra tal cual en el cartel de error.
+            TempData["Error"] = await ApiRespuestas.LeerMensajeErrorAsync(response, "No se pudo dar de baja la persona.");
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Reactivar(int id)
+    {
+        var response = await _httpClient.PostAsync($"api/personas/{id}/reactivar", null);
+        if (response.IsSuccessStatusCode)
+        {
+            TempData["Exito"] = "Persona reactivada correctamente.";
+        }
+        else
+        {
+            TempData["Error"] = await ApiRespuestas.LeerMensajeErrorAsync(response, "No se pudo reactivar la persona.");
         }
 
         return RedirectToAction(nameof(Index));

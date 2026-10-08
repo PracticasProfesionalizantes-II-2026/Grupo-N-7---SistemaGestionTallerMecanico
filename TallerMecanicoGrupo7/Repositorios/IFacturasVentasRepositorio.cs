@@ -10,5 +10,4 @@ public interface IFacturasVentasRepositorio
     Task<FacturaVentaDetalleReadDto?> GetDetalleFacturaVentaAsync(int id);
     Task AddFacturaVentaAsync(FacturaVenta facturaVenta);
     Task UpdateFacturaVentaAsync(FacturaVenta facturaVenta);
-    Task DeleteFacturaVentaAsync(int id);
 }
