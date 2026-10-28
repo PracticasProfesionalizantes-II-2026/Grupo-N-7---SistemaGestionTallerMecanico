@@ -131,6 +131,144 @@ public class FacturasComprasController : Controller
             : RedirectToAction("Create", "DetallesFacturasCompras", new { facturaId = facturaCreada.Id });
     }
 
+    // Tipos de archivo aceptados para la carga con IA. El tipo MIME se deduce de la
+    // extensión (ya validada) en vez de confiar en el ContentType que manda el navegador.
+    private static readonly Dictionary<string, string> TiposFacturaPermitidos = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [".pdf"] = "application/pdf",
+        [".jpg"] = "image/jpeg",
+        [".jpeg"] = "image/jpeg",
+        [".png"] = "image/png",
+        [".webp"] = "image/webp",
+    };
+
+    private const long TamanioMaximoFactura = 10 * 1024 * 1024;
+
+    public IActionResult CargarConIA()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(12 * 1024 * 1024)]
+    public async Task<IActionResult> CargarConIA(IFormFile? archivoFactura)
+    {
+        if (archivoFactura is null || archivoFactura.Length == 0)
+        {
+            ModelState.AddModelError(string.Empty, "Seleccione el archivo de la factura.");
+            return View();
+        }
+
+        var extension = Path.GetExtension(archivoFactura.FileName);
+        if (!TiposFacturaPermitidos.TryGetValue(extension, out var mimeType))
+        {
+            ModelState.AddModelError(string.Empty, "El archivo debe ser un PDF o una imagen (JPG, PNG o WEBP).");
+            return View();
+        }
+
+        if (archivoFactura.Length > TamanioMaximoFactura)
+        {
+            ModelState.AddModelError(string.Empty, "El archivo debe pesar como máximo 10 MB.");
+            return View();
+        }
+
+        using var memoria = new MemoryStream();
+        await archivoFactura.CopyToAsync(memoria);
+
+        var response = await _httpClient.PostAsJsonAsync("api/facturas-compras/extraer", new
+        {
+            ArchivoBase64 = Convert.ToBase64String(memoria.ToArray()),
+            MimeType = mimeType
+        });
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            ModelState.AddModelError(string.Empty, $"No se pudo leer la factura. Detalle: {errorContent}");
+            return View();
+        }
+
+        var sugerida = await response.Content.ReadFromJsonAsync<FacturaSugerida>() ?? new FacturaSugerida();
+        var revision = new FacturaCompraIA
+        {
+            IdProveedor = sugerida.IdProveedor,
+            FechaFactura = sugerida.FechaFactura ?? DateTime.Today,
+            IdFormaPago = sugerida.IdFormaPago,
+            ProveedorLeido = sugerida.ProveedorLeido,
+            CuitLeido = sugerida.CuitLeido,
+            NumeroFactura = sugerida.NumeroFactura,
+            FormaPagoLeida = sugerida.FormaPagoLeida,
+            TotalLeido = sugerida.TotalLeido,
+            Detalles = sugerida.Items.Select(x => new ItemFacturaCompraIA
+            {
+                IdInsumo = x.IdInsumo,
+                DescripcionLeida = string.IsNullOrWhiteSpace(x.MarcaLeida) ? x.DescripcionLeida : $"{x.DescripcionLeida} ({x.MarcaLeida})",
+                Cantidad = x.Cantidad,
+                PrecioUnitario = x.PrecioUnitario
+            }).ToList()
+        };
+
+        // Muestra la pantalla de revisión sin errores de validación: los datos que
+        // falten se marcan en la vista y recién se validan al confirmar.
+        ModelState.Clear();
+        await CargarOpcionesAsync();
+        await CargarInsumosAsync();
+        return View("RevisarFacturaIA", revision);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ConfirmarIA(FacturaCompraIA facturaCompra)
+    {
+        facturaCompra.Pagado = facturaCompra.FechaPagoFactura.HasValue;
+
+        if (!ModelState.IsValid)
+        {
+            await CargarOpcionesAsync();
+            await CargarInsumosAsync();
+            return View("RevisarFacturaIA", facturaCompra);
+        }
+
+        var response = await _httpClient.PostAsJsonAsync("api/facturas-compras/completa", new
+        {
+            facturaCompra.IdProveedor,
+            facturaCompra.IdSesionCaja,
+            facturaCompra.FechaFactura,
+            TotalFactura = 0m,
+            facturaCompra.Pagado,
+            facturaCompra.FechaPagoFactura,
+            facturaCompra.IdFormaPago,
+            Detalles = facturaCompra.Detalles.Select(x => new { x.IdInsumo, x.Cantidad, x.PrecioUnitario })
+        });
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            ModelState.AddModelError(string.Empty, $"No se pudo guardar la factura de compra. Detalle: {errorContent}");
+            await CargarOpcionesAsync();
+            await CargarInsumosAsync();
+            return View("RevisarFacturaIA", facturaCompra);
+        }
+
+        var facturaCreada = await response.Content.ReadFromJsonAsync<FacturaCompra>();
+        return facturaCreada is null
+            ? RedirectToAction(nameof(Index))
+            : RedirectToAction("Details", "DetallesFacturasCompras", new { facturaId = facturaCreada.Id });
+    }
+
+    // Para refrescar los combos de la pantalla de revisión después de dar de alta
+    // un proveedor o insumo en otra pestaña, sin perder lo que ya se cargó.
+    [HttpGet]
+    public async Task<IActionResult> OpcionesIA()
+    {
+        await CargarOpcionesAsync();
+        await CargarInsumosAsync();
+        var proveedores = (ViewBag.Proveedores as List<Proveedor> ?? new List<Proveedor>())
+            .Select(x => new { id = x.Id, texto = $"{x.Apellido}, {x.Nombre}" });
+        var insumos = (ViewBag.Insumos as List<Insumo> ?? new List<Insumo>())
+            .Select(x => new { id = x.Id, texto = $"{x.Nombre} - Marca: {x.Marca}", precio = x.PrecioCompra });
+        return Json(new { proveedores, insumos });
+    }
+
     public async Task<IActionResult> Edit(int id)
     {
         var response = await _httpClient.GetAsync($"api/facturas-compras/{id}");
@@ -240,6 +378,22 @@ public class FacturasComprasController : Controller
             ModelState.AddModelError(string.Empty, "No se pudieron cargar las sesiones de caja.");
         if (!formasPagoResponse.IsSuccessStatusCode)
             ModelState.AddModelError(string.Empty, "No se pudieron cargar las formas de pago.");
+    }
+
+    private async Task CargarInsumosAsync()
+    {
+        var insumosResponse = await _httpClient.GetAsync("api/insumos");
+        var insumos = insumosResponse.IsSuccessStatusCode
+            ? await insumosResponse.Content.ReadFromJsonAsync<List<Insumo>>() ?? new List<Insumo>()
+            : new List<Insumo>();
+        ViewBag.Insumos = insumos
+            .Where(x => x.Activo)
+            .OrderBy(x => x.Nombre)
+            .ThenBy(x => x.Marca)
+            .ToList();
+
+        if (!insumosResponse.IsSuccessStatusCode)
+            ModelState.AddModelError(string.Empty, "No se pudieron cargar los insumos.");
     }
 
     private async Task<decimal> CalcularTotalAsync(int facturaId)

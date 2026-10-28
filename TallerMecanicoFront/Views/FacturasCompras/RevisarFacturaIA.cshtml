@@ -1,0 +1,287 @@
+@model TallerMecanicoFront.Models.FacturaCompraIA
+@using System.Globalization
+@using TallerMecanicoFront.Models
+@{
+    ViewData["Title"] = "Revisar Factura cargada con IA";
+    var proveedores = ViewBag.Proveedores as IEnumerable<Proveedor> ?? Enumerable.Empty<Proveedor>();
+    var sesiones = ViewBag.SesionesCaja as IEnumerable<SesionCaja> ?? Enumerable.Empty<SesionCaja>();
+    var formasPago = ViewBag.FormasPago as IEnumerable<FormaPago> ?? Enumerable.Empty<FormaPago>();
+    var insumos = ViewBag.Insumos as IEnumerable<Insumo> ?? Enumerable.Empty<Insumo>();
+    var inv = CultureInfo.InvariantCulture;
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-xxl-10">
+        <div class="card shadow-sm border-0"><div class="card-body p-4">
+            <h1 class="h4 mb-1"><i class="bi bi-stars"></i> Revisar factura cargada con IA</h1>
+            <p class="text-muted mb-4">
+                Los datos fueron leídos automáticamente y pueden tener errores. Revise cada campo antes de guardar.
+                @if (!string.IsNullOrWhiteSpace(Model.NumeroFactura))
+                {
+                    <span>Comprobante leído: <strong>@Model.NumeroFactura</strong>.</span>
+                }
+            </p>
+
+            <form asp-action="ConfirmarIA" method="post" id="formRevisarIA">
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                <input asp-for="ProveedorLeido" type="hidden" />
+                <input asp-for="CuitLeido" type="hidden" />
+                <input asp-for="NumeroFactura" type="hidden" />
+                <input asp-for="FormaPagoLeida" type="hidden" />
+                <input type="hidden" name="TotalLeido" value="@Model.TotalLeido?.ToString(inv)" />
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="IdProveedor" class="form-label">Proveedor</label>
+                        <div class="input-group">
+                            <select asp-for="IdProveedor" class="form-select @(Model.IdProveedor is null ? "border-warning" : "")" required>
+                                <option value="">Seleccione un proveedor</option>
+                                @foreach (var proveedor in proveedores)
+                                {
+                                    <option value="@proveedor.Id">@proveedor.Apellido, @proveedor.Nombre</option>
+                                }
+                            </select>
+                            <a asp-controller="Proveedores" asp-action="Create" target="_blank" class="btn btn-outline-secondary" title="Agregar proveedor (se abre en otra pestaña)"><i class="bi bi-person-fill-add"></i></a>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(Model.ProveedorLeido) || !string.IsNullOrWhiteSpace(Model.CuitLeido))
+                        {
+                            <div class="form-text @(Model.IdProveedor is null ? "text-warning-emphasis fw-semibold" : "")">
+                                @(Model.IdProveedor is null ? "No se encontró el proveedor en el sistema." : "Leído en la factura:")
+                                @Model.ProveedorLeido @(string.IsNullOrWhiteSpace(Model.CuitLeido) ? "" : $"- CUIT {Model.CuitLeido}")
+                            </div>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="IdSesionCaja" class="form-label">Sesión de caja</label>
+                        <select asp-for="IdSesionCaja" class="form-select" required>
+                            <option value="">Seleccione una sesión</option>
+                            @foreach (var sesion in sesiones)
+                            {
+                                <option value="@sesion.Id">#@sesion.Id - @sesion.FechaInicio.ToString("dd/MM/yyyy HH:mm")</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="FechaFactura" class="form-label">Fecha de factura</label>
+                        <input asp-for="FechaFactura" type="date" class="form-control" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="IdFormaPago" class="form-label">Forma de pago</label>
+                        <select asp-for="IdFormaPago" class="form-select @(Model.IdFormaPago is null ? "border-warning" : "")" required>
+                            <option value="">Seleccione una forma de pago</option>
+                            @foreach (var forma in formasPago)
+                            {
+                                <option value="@forma.Id">@forma.Nombre</option>
+                            }
+                        </select>
+                        @if (!string.IsNullOrWhiteSpace(Model.FormaPagoLeida))
+                        {
+                            <div class="form-text">Leído en la factura: @Model.FormaPagoLeida</div>
+                        }
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="FechaPagoFactura" class="form-label">Fecha de pago</label>
+                        <input asp-for="FechaPagoFactura" type="date" class="form-control" />
+                        <div class="form-text">Completar solo si la factura ya está pagada.</div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+                    <h2 class="h5 mb-0">Ítems</h2>
+                    <div class="d-flex gap-2">
+                        <a asp-controller="Insumos" asp-action="Create" target="_blank" class="btn btn-outline-primary btn-sm" title="Se abre en otra pestaña">Nuevo insumo</a>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnActualizarListas" title="Recargar proveedores e insumos después de darlos de alta">
+                            <i class="bi bi-arrow-clockwise"></i> Actualizar listas
+                        </button>
+                        <button type="button" class="btn btn-outline-success btn-sm" id="btnAgregarItem"><i class="bi bi-plus-circle"></i> Agregar ítem</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle" id="tablaItems">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 260px">Insumo</th>
+                                <th style="width: 110px">Cantidad</th>
+                                <th style="width: 150px">Precio unitario</th>
+                                <th style="width: 130px" class="text-end">Total</th>
+                                <th style="width: 50px"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var i = 0; i < Model.Detalles.Count; i++)
+                            {
+                                var item = Model.Detalles[i];
+                                <tr class="fila-item @(item.IdInsumo is null ? "table-warning" : "")">
+                                    <td>
+                                        <select name="Detalles[@i].IdInsumo" class="form-select form-select-sm sel-insumo" required>
+                                            <option value="">Seleccione un insumo</option>
+                                            @foreach (var insumo in insumos)
+                                            {
+                                                <option value="@insumo.Id" data-precio="@insumo.PrecioCompra.ToString(inv)" selected="@(insumo.Id == item.IdInsumo)">@insumo.Nombre - Marca: @insumo.Marca</option>
+                                            }
+                                        </select>
+                                        <input type="hidden" name="Detalles[@i].DescripcionLeida" value="@item.DescripcionLeida" />
+                                        @if (!string.IsNullOrWhiteSpace(item.DescripcionLeida))
+                                        {
+                                            <div class="small text-muted mt-1">
+                                                @(item.IdInsumo is null ? "No encontrado. Leído:" : "Leído:") @item.DescripcionLeida
+                                            </div>
+                                        }
+                                    </td>
+                                    <td><input name="Detalles[@i].Cantidad" value="@item.Cantidad" type="number" min="1" step="1" class="form-control form-control-sm inp-cantidad" required /></td>
+                                    <td><input name="Detalles[@i].PrecioUnitario" value="@item.PrecioUnitario.ToString(inv)" type="number" min="0.01" step="0.01" class="form-control form-control-sm inp-precio" required /></td>
+                                    <td class="text-end celda-total">0.00</td>
+                                    <td><button type="button" class="btn btn-outline-danger btn-sm btn-quitar" title="Quitar ítem"><i class="bi bi-trash"></i></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="3" class="text-end">Total calculado</th>
+                                <th class="text-end" id="totalCalculado">0.00</th>
+                                <th></th>
+                            </tr>
+                            @if (Model.TotalLeido.HasValue)
+                            {
+                                <tr>
+                                    <td colspan="3" class="text-end text-muted">Total leído en la factura</td>
+                                    <td class="text-end text-muted" id="totalLeido" data-total="@Model.TotalLeido.Value.ToString(inv)">@Model.TotalLeido.Value.ToString("0.00", inv)</td>
+                                    <td></td>
+                                </tr>
+                            }
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="alert alert-warning d-none" id="avisoTotal">
+                    El total calculado no coincide con el total leído en la factura. Puede deberse a impuestos o percepciones
+                    que no son ítems, o a un dato mal leído: revise cantidades y precios.
+                </div>
+
+                <div class="d-flex justify-content-center gap-5 mt-4">
+                    <button type="submit" class="btn btn-success">Confirmar y guardar</button>
+                    <a asp-action="Index" class="btn btn-danger">Cancelar</a>
+                </div>
+            </form>
+        </div></div>
+    </div>
+</div>
+
+<template id="templateFila">
+    <tr class="fila-item table-warning">
+        <td>
+            <select class="form-select form-select-sm sel-insumo" data-campo="IdInsumo" required>
+                <option value="">Seleccione un insumo</option>
+                @foreach (var insumo in insumos)
+                {
+                    <option value="@insumo.Id" data-precio="@insumo.PrecioCompra.ToString(inv)">@insumo.Nombre - Marca: @insumo.Marca</option>
+                }
+            </select>
+            <input type="hidden" data-campo="DescripcionLeida" value="" />
+        </td>
+        <td><input data-campo="Cantidad" value="1" type="number" min="1" step="1" class="form-control form-control-sm inp-cantidad" required /></td>
+        <td><input data-campo="PrecioUnitario" value="" type="number" min="0.01" step="0.01" class="form-control form-control-sm inp-precio" required /></td>
+        <td class="text-end celda-total">0.00</td>
+        <td><button type="button" class="btn btn-outline-danger btn-sm btn-quitar" title="Quitar ítem"><i class="bi bi-trash"></i></button></td>
+    </tr>
+</template>
+
+@section Scripts {
+    <script>
+        (() => {
+            const tbody = document.querySelector("#tablaItems tbody");
+            const totalCalculado = document.getElementById("totalCalculado");
+            const totalLeido = document.getElementById("totalLeido");
+            const avisoTotal = document.getElementById("avisoTotal");
+            const urlOpciones = "@Url.Action("OpcionesIA")";
+
+            const numero = (input) => Number.parseFloat((input.value || "").replace(",", ".")) || 0;
+            const redondear = (valor) => Math.round((valor + Number.EPSILON) * 100) / 100;
+
+            function recalcular() {
+                let total = 0;
+                tbody.querySelectorAll(".fila-item").forEach(fila => {
+                    const subtotal = redondear(numero(fila.querySelector(".inp-cantidad")) * numero(fila.querySelector(".inp-precio")));
+                    fila.querySelector(".celda-total").textContent = subtotal.toFixed(2);
+                    total += subtotal;
+                });
+                total = redondear(total);
+                totalCalculado.textContent = total.toFixed(2);
+
+                if (totalLeido) {
+                    const leido = Number.parseFloat(totalLeido.dataset.total) || 0;
+                    avisoTotal.classList.toggle("d-none", Math.abs(leido - total) < 0.01);
+                }
+            }
+
+            // Los ítems se postean como Detalles[i].Campo: al agregar o quitar filas
+            // hay que renumerarlas para que el model binding no corte la lista.
+            function renumerar() {
+                tbody.querySelectorAll(".fila-item").forEach((fila, indice) => {
+                    fila.querySelectorAll("[name^='Detalles['], [data-campo]").forEach(control => {
+                        const campo = control.dataset.campo || control.name.replace(/^Detalles\[\d+\]\./, "");
+                        control.dataset.campo = campo;
+                        control.name = `Detalles[${indice}].${campo}`;
+                    });
+                });
+            }
+
+            tbody.addEventListener("input", recalcular);
+            tbody.addEventListener("change", (event) => {
+                if (!event.target.classList.contains("sel-insumo")) return;
+                const fila = event.target.closest(".fila-item");
+                fila.classList.toggle("table-warning", !event.target.value);
+                // Si el precio está vacío, se sugiere el último precio de compra del insumo.
+                const precio = fila.querySelector(".inp-precio");
+                const opcion = event.target.selectedOptions[0];
+                if (!precio.value && opcion?.dataset.precio) {
+                    precio.value = opcion.dataset.precio;
+                }
+                recalcular();
+            });
+            tbody.addEventListener("click", (event) => {
+                const boton = event.target.closest(".btn-quitar");
+                if (!boton) return;
+                boton.closest(".fila-item").remove();
+                renumerar();
+                recalcular();
+            });
+
+            document.getElementById("btnAgregarItem").addEventListener("click", () => {
+                const fila = document.getElementById("templateFila").content.firstElementChild.cloneNode(true);
+                tbody.appendChild(fila);
+                renumerar();
+                recalcular();
+            });
+
+            function recargarSelect(select, opciones, conPrecio) {
+                const seleccionado = select.value;
+                const primera = select.options[0].cloneNode(true);
+                select.innerHTML = "";
+                select.appendChild(primera);
+                opciones.forEach(opcion => {
+                    const elemento = new Option(opcion.texto, opcion.id, false, String(opcion.id) === seleccionado);
+                    if (conPrecio) elemento.dataset.precio = opcion.precio;
+                    select.appendChild(elemento);
+                });
+            }
+
+            document.getElementById("btnActualizarListas").addEventListener("click", async () => {
+                const respuesta = await fetch(urlOpciones);
+                if (!respuesta.ok) {
+                    alert("No se pudieron actualizar las listas.");
+                    return;
+                }
+                const datos = await respuesta.json();
+                recargarSelect(document.getElementById("IdProveedor"), datos.proveedores, false);
+                document.querySelectorAll(".sel-insumo").forEach(select => recargarSelect(select, datos.insumos, true));
+                recargarSelect(document.getElementById("templateFila").content.querySelector(".sel-insumo"), datos.insumos, true);
+            });
+
+            renumerar();
+            recalcular();
+        })();
+    </script>
+}

@@ -626,6 +626,94 @@ public class DetalleFacturaCompraWriteDto
     public decimal TotalCompra { get; set; }
 }
 
+// --- Carga de factura de compra con IA ---
+
+public class ExtraerFacturaRequestDto
+{
+    [Required]
+    public string ArchivoBase64 { get; set; } = string.Empty;
+    [Required]
+    [StringLength(50)]
+    public string MimeType { get; set; } = string.Empty;
+}
+
+/// <summary>Datos tal cual los devuelve la IA, antes de buscarlos en la base.</summary>
+public class FacturaExtraidaDto
+{
+    public string? ProveedorRazonSocial { get; set; }
+    public string? ProveedorCuit { get; set; }
+    public string? NumeroFactura { get; set; }
+    public string? FechaFactura { get; set; }
+    public string? FormaPago { get; set; }
+    public decimal? Total { get; set; }
+    public List<ItemExtraidoDto> Items { get; set; } = new();
+}
+
+public class ItemExtraidoDto
+{
+    public string Descripcion { get; set; } = string.Empty;
+    public string? Marca { get; set; }
+    public decimal? Cantidad { get; set; }
+    public decimal? PrecioUnitario { get; set; }
+}
+
+/// <summary>
+/// Factura leída por la IA con los Id del sistema que se pudieron reconocer.
+/// Los Id en null son datos que el usuario tiene que elegir a mano.
+/// </summary>
+public class FacturaSugeridaDto
+{
+    public int? IdProveedor { get; set; }
+    public string? ProveedorLeido { get; set; }
+    public string? CuitLeido { get; set; }
+    public string? NumeroFactura { get; set; }
+    public DateTime? FechaFactura { get; set; }
+    public int? IdFormaPago { get; set; }
+    public string? FormaPagoLeida { get; set; }
+    public decimal? TotalLeido { get; set; }
+    public List<ItemSugeridoDto> Items { get; set; } = new();
+}
+
+public class ItemSugeridoDto
+{
+    public int? IdInsumo { get; set; }
+    public string DescripcionLeida { get; set; } = string.Empty;
+    public string? MarcaLeida { get; set; }
+    public int Cantidad { get; set; }
+    public decimal PrecioUnitario { get; set; }
+}
+
+/// <summary>Alta de una factura de compra con todos sus ítems en un solo paso.</summary>
+public class FacturaCompraCompletaWriteDto : FacturaCompraWriteDto, IValidatableObject
+{
+    public List<DetalleFacturaCompraCompletaWriteDto> Detalles { get; set; } = new();
+
+    public new IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        foreach (var resultado in base.Validate(validationContext))
+        {
+            yield return resultado;
+        }
+        if (Detalles.Count == 0)
+        {
+            yield return new ValidationResult("La factura debe tener al menos un ítem.", new[] { nameof(Detalles) });
+        }
+    }
+}
+
+public class DetalleFacturaCompraCompletaWriteDto
+{
+    [Required]
+    [Range(1, int.MaxValue)]
+    public int IdInsumo { get; set; }
+    [Required]
+    [Range(1, int.MaxValue)]
+    public int Cantidad { get; set; }
+    [Required]
+    [Range(typeof(decimal), "0.01", "79228162514264337593543950335")]
+    public decimal PrecioUnitario { get; set; }
+}
+
 public class FacturaVentaReadDto
 {
     public int Id { get; set; }

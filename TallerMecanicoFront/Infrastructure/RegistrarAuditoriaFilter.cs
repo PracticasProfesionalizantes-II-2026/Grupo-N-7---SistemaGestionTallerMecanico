@@ -83,6 +83,7 @@ public class RegistrarAuditoriaFilter : IAsyncActionFilter
             "Edit" => "Modificación",
             "Delete" => "Baja",
             "Reactivar" => "Reactivación",
+            "ConfirmarIA" => "Alta con IA",
             _ => accion
         };
 

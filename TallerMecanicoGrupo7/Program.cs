@@ -3,6 +3,7 @@ using ClasesTallerMecanico.Datos;
 using ClasesTallerMecanico.Endpoints;
 using ClasesTallerMecanico.Logica;
 using ClasesTallerMecanico.Repositorios;
+using ClasesTallerMecanico.Servicios;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -78,6 +79,12 @@ builder.Services.AddScoped<ITurnosRepositorio, TurnosRepositorio>();
 builder.Services.AddScoped<ITurnosLogica, TurnosLogica>();
 builder.Services.AddScoped<IUsuariosRepositorio, UsuariosRepositorio>();
 builder.Services.AddScoped<IUsuariosLogica, UsuariosLogica>();
+builder.Services.AddScoped<IFacturaIALogica, FacturaIALogica>();
+
+// Lectura de facturas de compra con Gemini. La API key va en la variable de
+// entorno GEMINI_API_KEY (no se guarda en appsettings para no subirla al repo).
+builder.Services.AddHttpClient<IGeminiFacturaServicio, GeminiFacturaServicio>(client =>
+    client.Timeout = TimeSpan.FromSeconds(90));
 
 var app = builder.Build();
 
