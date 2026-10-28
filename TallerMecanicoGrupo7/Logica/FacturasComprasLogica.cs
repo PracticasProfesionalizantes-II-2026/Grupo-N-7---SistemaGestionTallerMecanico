@@ -27,6 +27,11 @@ public class FacturasComprasLogica : IFacturasComprasLogica
         return _facturasComprasRepositorio.AddFacturaCompraAsync(facturaCompra);
     }
 
+    public Task AddFacturaCompraCompletaAsync(FacturaCompra facturaCompra, IEnumerable<DetalleFacturaCompra> detalles)
+    {
+        return _facturasComprasRepositorio.AddFacturaCompraCompletaAsync(facturaCompra, detalles);
+    }
+
     public Task UpdateFacturaCompraAsync(FacturaCompra facturaCompra)
     {
         return _facturasComprasRepositorio.UpdateFacturaCompraAsync(facturaCompra);

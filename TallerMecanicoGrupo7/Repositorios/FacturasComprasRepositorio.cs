@@ -7,10 +7,12 @@ namespace ClasesTallerMecanico.Repositorios;
 public class FacturasComprasRepositorio : IFacturasComprasRepositorio
 {
     private readonly FacturasDBContext _context;
+    private readonly IDetallesFacturasComprasRepositorio _detallesRepositorio;
 
-    public FacturasComprasRepositorio(FacturasDBContext context)
+    public FacturasComprasRepositorio(FacturasDBContext context, IDetallesFacturasComprasRepositorio detallesRepositorio)
     {
         _context = context;
+        _detallesRepositorio = detallesRepositorio;
     }
 
     public async Task<IEnumerable<FacturaCompra>> GetFacturasComprasAsync()
@@ -33,6 +35,26 @@ public class FacturasComprasRepositorio : IFacturasComprasRepositorio
         facturaCompra.TotalFactura = 0;
         _context.FacturasCompras.Add(facturaCompra);
         await _context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Alta de la cabecera y de todos sus ítems en una sola transacción (carga con IA):
+    /// si falla cualquier ítem no queda una factura a medio cargar ni stock sumado.
+    /// Cada ítem pasa por el mismo alta que la carga manual (stock, precio y total).
+    /// </summary>
+    public async Task AddFacturaCompraCompletaAsync(FacturaCompra facturaCompra, IEnumerable<DetalleFacturaCompra> detalles)
+    {
+        await using var transaccion = await _context.Database.BeginTransactionAsync();
+
+        await AddFacturaCompraAsync(facturaCompra);
+        foreach (var detalle in detalles)
+        {
+            detalle.IdFacturaCompra = facturaCompra.Id;
+            detalle.FechaCompra = facturaCompra.FechaFactura;
+            await _detallesRepositorio.AddDetalleFacturaCompraAsync(detalle);
+        }
+
+        await transaccion.CommitAsync();
     }
 
     private static void ValidarFechas(FacturaCompra facturaCompra)

@@ -1,0 +1,56 @@
+@{
+    ViewData["Title"] = "Cargar Factura con IA";
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-2"><i class="bi bi-stars"></i> Cargar factura de compra con IA</h1>
+                <p class="text-muted mb-4">
+                    Suba la factura del proveedor (PDF o foto). El sistema va a leer el proveedor, la fecha, la forma de pago
+                    y los ítems, y le va a mostrar los datos para que los revise antes de guardar.
+                </p>
+
+                <form asp-action="CargarConIA" method="post" enctype="multipart/form-data" id="formCargarIA">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="mb-4">
+                        <label for="archivoFactura" class="form-label">Archivo de la factura</label>
+                        <input type="file" id="archivoFactura" name="archivoFactura" class="form-control"
+                               accept=".pdf,.jpg,.jpeg,.png,.webp" required />
+                        <div class="form-text">PDF, JPG, PNG o WEBP. Máximo 10 MB.</div>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-5 mt-4">
+                        <button type="submit" class="btn btn-success" id="btnAnalizar">
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            <span class="texto">Analizar factura</span>
+                        </button>
+                        <a asp-action="Index" class="btn btn-danger">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById("formCargarIA").addEventListener("submit", function (event) {
+            const archivo = document.getElementById("archivoFactura");
+            if (!archivo.files.length) return;
+            if (archivo.files[0].size > 10 * 1024 * 1024) {
+                event.preventDefault();
+                alert("El archivo debe pesar como máximo 10 MB.");
+                return;
+            }
+
+            // La lectura con IA puede tardar varios segundos.
+            const boton = document.getElementById("btnAnalizar");
+            boton.disabled = true;
+            boton.querySelector(".spinner-border").classList.remove("d-none");
+            boton.querySelector(".texto").textContent = "Analizando factura...";
+        });
+    </script>
+}
