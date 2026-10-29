@@ -25,9 +25,11 @@ jobs:
 
       - name: Build with dotnet
         run: dotnet build --configuration Release
+        working-directory: TallerMecanicoGrupo7
 
       - name: dotnet publish
         run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+        working-directory: TallerMecanicoGrupo7
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -61,5 +63,5 @@ jobs:
         with:
           app-name: 'AgroTurnoWeb'
           slot-name: 'Production'
-          package: .
+          package: '${{ env.DOTNET_ROOT }}/myapp'
           
